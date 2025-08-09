@@ -45,9 +45,8 @@ export interface Screenshot {
   providedIn: 'root'
 })
 export class CameraService {
-  private readonly backendHost = `${window.location.protocol}//${window.location.hostname}:8080`;
-  private apiUrl = `${this.backendHost}/api/camera`;
-  private wsUrl = `${this.backendHost}/ws`;
+  private apiUrl = `/api/camera`;
+  private wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
   
   private stompClient: Client | null = null;
   private isConnectedSubject = new BehaviorSubject<boolean>(false);
