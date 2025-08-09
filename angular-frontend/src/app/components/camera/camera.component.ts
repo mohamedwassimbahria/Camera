@@ -31,7 +31,11 @@ import { Subscription } from 'rxjs';
                 playsinline
                 [style.display]="isCameraActive ? 'block' : 'none'">
               </video>
-              <div *ngIf="!isCameraActive" class="d-flex justify-content-center align-items-center" style="height: 300px; background: #f8f9fa;">
+              <img *ngIf="!isCameraActive && isViewing && latestFrameSrc" 
+                   [src]="latestFrameSrc" 
+                   class="video-stream" 
+                   [alt]="'Remote session ' + viewingSessionId">
+              <div *ngIf="!isCameraActive && (!isViewing || !latestFrameSrc)" class="d-flex justify-content-center align-items-center" style="height: 300px; background: #f8f9fa;">
                 <div class="text-center">
                   <i class="bi bi-camera-video-off" style="font-size: 3rem; color: #6c757d;"></i>
                   <p class="mt-3 text-muted">Camera not active</p>
@@ -63,6 +67,22 @@ import { Subscription } from 'rxjs';
                 [disabled]="!isCameraActive">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
               </button>
+              
+              <hr>
+
+              <div class="mb-2">
+                <label class="form-label">Video input device</label>
+                <div class="input-group">
+                  <select class="form-select" [(ngModel)]="selectedDeviceId" [disabled]="isCameraActive">
+                    <option [ngValue]="null">Default camera</option>
+                    <option *ngFor="let d of videoInputDevices" [value]="d.deviceId">{{ d.label || 'Camera ' + d.deviceId.substring(0,6) }}</option>
+                  </select>
+                  <button class="btn btn-outline-secondary" type="button" (click)="refreshDevices()" [disabled]="isCameraActive">
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </button>
+                </div>
+                <small class="text-muted">Use this to pick a virtual iPhone webcam (e.g., DroidCam/Iriun) on desktop.</small>
+              </div>
               
               <hr>
               
@@ -99,6 +119,20 @@ import { Subscription } from 'rxjs';
                 [(ngModel)]="deviceId" 
                 placeholder="Enter device identifier"
                 [disabled]="isCameraActive">
+            </div>
+
+            <div class="mt-4 p-3 border rounded">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0">View-only session</label>
+                <button class="btn btn-sm btn-outline-secondary" type="button" (click)="leaveViewing()" [disabled]="!isViewing">Leave</button>
+              </div>
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="Enter session ID to view" [(ngModel)]="viewingSessionId" [disabled]="isCameraActive">
+                <button class="btn btn-outline-primary" type="button" (click)="joinViewing()" [disabled]="isCameraActive || !viewingSessionId">
+                  Join
+                </button>
+              </div>
+              <small class="text-muted">Open this app on your iPhone, press Start Camera, then enter that session ID here to view.</small>
             </div>
           </div>
         </div>
@@ -194,6 +228,13 @@ export class CameraComponent implements OnInit, OnDestroy {
   private recordingInterval: any;
   private recordedChunks: Blob[] = [];
   private subscriptions: Subscription[] = [];
+
+  // New state for device selection and viewing
+  videoInputDevices: MediaDeviceInfo[] = [];
+  selectedDeviceId: string | null = null;
+  viewingSessionId: string = '';
+  isViewing: boolean = false;
+  latestFrameSrc: string | null = null;
   
   constructor(private cameraService: CameraService) {}
   
@@ -213,6 +254,18 @@ export class CameraComponent implements OnInit, OnDestroy {
         this.currentSession = session;
       })
     );
+
+    // Subscribe to incoming frames for viewing mode
+    this.subscriptions.push(
+      this.cameraService.cameraFrame$.subscribe(framePayload => {
+        if (!this.isCameraActive && this.isViewing && framePayload?.frame) {
+          this.latestFrameSrc = framePayload.frame;
+        }
+      })
+    );
+
+    // Try to populate available devices (will require permission for labels)
+    this.refreshDevices();
   }
   
   ngOnDestroy(): void {
@@ -226,17 +279,20 @@ export class CameraComponent implements OnInit, OnDestroy {
       this.isLoading = true;
       
       // Request camera permission and get stream
+      const videoConstraints: MediaTrackConstraints = this.selectedDeviceId
+        ? { deviceId: { exact: this.selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' };
+
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 },
-          facingMode: 'environment' // Use back camera on mobile
-        },
+        video: videoConstraints,
         audio: true
       });
       
       // Set video source
       this.videoElement.nativeElement.srcObject = this.mediaStream;
+      
+      // Refresh devices after permission to get labels
+      await this.refreshDevices();
       
       // Start camera session
       this.cameraService.startSession(this.deviceId).subscribe({
@@ -254,6 +310,8 @@ export class CameraComponent implements OnInit, OnDestroy {
           this.cameraService.setCurrentSession(this.currentSession);
           this.cameraService.subscribeToSession(response.sessionId);
           this.isCameraActive = true;
+          this.isViewing = false;
+          this.latestFrameSrc = null;
           this.startFrameStreaming();
         },
         error: (error) => {
@@ -290,6 +348,32 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.isCameraActive = false;
     this.currentSession = null;
     this.cameraService.setCurrentSession(null);
+  }
+
+  async refreshDevices(): Promise<void> {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) {
+        this.videoInputDevices = [];
+        return;
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.videoInputDevices = devices.filter(d => d.kind === 'videoinput');
+    } catch (e) {
+      console.warn('Could not enumerate devices:', e);
+    }
+  }
+
+  joinViewing(): void {
+    if (!this.viewingSessionId) return;
+    this.isViewing = true;
+    this.isCameraActive = false;
+    this.latestFrameSrc = null;
+    this.cameraService.subscribeToSession(this.viewingSessionId);
+  }
+
+  leaveViewing(): void {
+    this.isViewing = false;
+    this.latestFrameSrc = null;
   }
   
   private stopMediaStream(): void {
