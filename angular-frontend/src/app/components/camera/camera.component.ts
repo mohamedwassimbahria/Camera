@@ -236,6 +236,11 @@ export class CameraComponent implements OnInit, OnDestroy {
   isViewing: boolean = false;
   latestFrameSrc: string | null = null;
   
+  private get isIOS(): boolean {
+    const ua = navigator.userAgent || navigator.vendor;
+    return /iPad|iPhone|iPod/.test(ua);
+  }
+  
   constructor(private cameraService: CameraService) {}
   
   ngOnInit(): void {
@@ -282,11 +287,31 @@ export class CameraComponent implements OnInit, OnDestroy {
       const videoConstraints: MediaTrackConstraints = this.selectedDeviceId
         ? { deviceId: { exact: this.selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
         : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' };
-
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraints,
-        audio: true
-      });
+      
+      // On iOS, avoid requesting microphone initially to reduce permission friction
+      const wantAudio = !this.isIOS;
+      
+      // Primary attempt
+      try {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: wantAudio
+        });
+      } catch (primaryError: any) {
+        // Fallbacks: relax constraints and/or drop audio entirely
+        try {
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false
+          });
+        } catch (fallbackEnvError: any) {
+          // Final fallback: generic camera
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        }
+      }
       
       // Set video source
       this.videoElement.nativeElement.srcObject = this.mediaStream;
@@ -326,7 +351,11 @@ export class CameraComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error accessing camera:', error);
       this.isLoading = false;
-      alert('Could not access camera. Please ensure camera permissions are granted.');
+      // Provide actionable guidance, especially for iOS and insecure contexts
+      const secureHint = (!window.isSecureContext && this.isIOS)
+        ? '\nTip: On iPhone, use HTTPS (e.g., ng serve --ssl) and accept the certificate.'
+        : '';
+      alert('Could not access camera. Please ensure camera permissions are granted on your device and the camera is not in use by another app.' + secureHint);
     }
   }
   
