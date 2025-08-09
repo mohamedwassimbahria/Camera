@@ -315,6 +315,9 @@ export class CameraComponent implements OnInit, OnDestroy {
       
       // Set video source
       this.videoElement.nativeElement.srcObject = this.mediaStream;
+      try {
+        await this.videoElement.nativeElement.play();
+      } catch {}
       
       // Refresh devices after permission to get labels
       await this.refreshDevices();
@@ -342,6 +345,8 @@ export class CameraComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error starting camera session:', error);
           this.stopMediaStream();
+          this.isLoading = false;
+          alert('Could not start camera session. Ensure the backend is running on port 8080 and reachable.');
         },
         complete: () => {
           this.isLoading = false;
