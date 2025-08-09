@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import * as SockJS from 'sockjs-client';
 
 export interface CameraSession {
   id: number;
@@ -45,8 +45,9 @@ export interface Screenshot {
   providedIn: 'root'
 })
 export class CameraService {
-  private apiUrl = 'http://localhost:8080/api/camera';
-  private wsUrl = 'http://localhost:8080/ws';
+  private readonly backendHost = `${window.location.protocol}//${window.location.hostname}:8080`;
+  private apiUrl = `${this.backendHost}/api/camera`;
+  private wsUrl = `${this.backendHost}/ws`;
   
   private stompClient: Client | null = null;
   private isConnectedSubject = new BehaviorSubject<boolean>(false);
