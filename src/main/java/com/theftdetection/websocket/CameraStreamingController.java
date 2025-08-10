@@ -22,6 +22,15 @@ public class CameraStreamingController {
     @MessageMapping("/camera/frame/{sessionId}")
     public void handleCameraFrame(@DestinationVariable String sessionId, @Payload Map<String, Object> frameData) {
         // Broadcast the frame to all subscribers of this session
+        try {
+            Object frame = frameData.get("frame");
+            if (frame instanceof String) {
+                int len = ((String) frame).length();
+                if (len > 0) {
+                    System.out.println("Received frame for session " + sessionId + ", size=" + len);
+                }
+            }
+        } catch (Exception ignored) {}
         messagingTemplate.convertAndSend("/topic/camera/" + sessionId, frameData);
     }
 
