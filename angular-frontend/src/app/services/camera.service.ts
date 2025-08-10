@@ -59,50 +59,60 @@ export class CameraService {
 
   constructor(private http: HttpClient) {}
 
+  private connectionPromise: Promise<void> | null = null;
+
   connectWebSocket(): void {
     if (this.stompClient?.connected) {
       return;
     }
 
-    this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
-      debug: (str) => console.log('STOMP: ' + str),
-      onConnect: () => {
-        console.log('WebSocket Connected');
-        this.isConnectedSubject.next(true);
-      },
-      onDisconnect: () => {
-        console.log('WebSocket Disconnected');
-        this.isConnectedSubject.next(false);
-      },
-      onStompError: (frame) => {
-        console.error('STOMP Error: ', frame);
-      }
-    });
-
-    this.stompClient.activate();
-  }
-
-  disconnectWebSocket(): void {
-    if (this.stompClient) {
-      this.stompClient.deactivate();
+    if (!this.connectionPromise) {
+      this.connectionPromise = new Promise<void>((resolve) => {
+        this.stompClient = new Client({
+          webSocketFactory: () => new SockJS(this.wsUrl),
+          debug: (str) => console.log('STOMP: ' + str),
+          onConnect: () => {
+            console.log('WebSocket Connected');
+            this.isConnectedSubject.next(true);
+            resolve();
+          },
+          onDisconnect: () => {
+            console.log('WebSocket Disconnected');
+            this.isConnectedSubject.next(false);
+            this.connectionPromise = null;
+          },
+          onStompError: (frame) => {
+            console.error('STOMP Error: ', frame);
+          }
+        });
+        this.stompClient.activate();
+      });
     }
   }
 
-  subscribeToSession(sessionId: string): void {
+  private async ensureConnected(): Promise<void> {
+    if (this.stompClient?.connected) return;
+    this.connectWebSocket();
+    await this.connectionPromise;
+  }
+
+  async subscribeToSession(sessionId: string): Promise<void> {
+    await this.ensureConnected();
+
     if (!this.stompClient?.connected) {
       console.error('WebSocket not connected');
       return;
     }
 
-    // Subscribe to camera frames for this session
     this.stompClient.subscribe(`/topic/camera/${sessionId}`, (message) => {
       const frameData = JSON.parse(message.body);
       this.cameraFrameSubject.next(frameData);
     });
   }
 
-  sendCameraFrame(sessionId: string, frameData: any): void {
+  async sendCameraFrame(sessionId: string, frameData: any): Promise<void> {
+    await this.ensureConnected();
+
     if (!this.stompClient?.connected) {
       console.error('WebSocket not connected');
       return;
@@ -178,5 +188,13 @@ export class CameraService {
 
   setCurrentSession(session: CameraSession | null): void {
     this.currentSessionSubject.next(session);
+  }
+
+  disconnectWebSocket(): void {
+    if (this.stompClient) {
+      this.stompClient.deactivate();
+      this.connectionPromise = null;
+      this.isConnectedSubject.next(false);
+    }
   }
 }
