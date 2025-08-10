@@ -426,6 +426,11 @@ export class CameraComponent implements OnInit, OnDestroy {
       if (!this.isCameraActive || !this.videoElement?.nativeElement) return;
       
       const video = this.videoElement.nativeElement;
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        // Try again shortly until metadata is available
+        setTimeout(streamFrame, 100);
+        return;
+      }
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
@@ -440,14 +445,21 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
       
       if (this.isCameraActive) {
-        setTimeout(streamFrame, 100); // 10 FPS
+        setTimeout(streamFrame, 100); // ~10 FPS
       }
     };
     
-    // Start streaming after video is loaded
-    this.videoElement.nativeElement.addEventListener('loadedmetadata', () => {
+    // Start streaming immediately if possible, and also on metadata load
+    const videoEl = this.videoElement.nativeElement;
+    const startIfReady = () => {
+      if (!this.isCameraActive) return;
       streamFrame();
-    });
+    };
+    
+    if (videoEl.readyState >= 1) {
+      startIfReady();
+    }
+    videoEl.addEventListener('loadedmetadata', startIfReady, { once: true });
   }
   
   toggleRecording(): void {
