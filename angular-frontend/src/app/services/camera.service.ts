@@ -46,7 +46,7 @@ export interface Screenshot {
 })
 export class CameraService {
   private apiUrl = `/api/camera`;
-  private wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
+  private wsUrl = `${window.location.origin}/ws`;
   
   private stompClient: Client | null = null;
   private isConnectedSubject = new BehaviorSubject<boolean>(false);
