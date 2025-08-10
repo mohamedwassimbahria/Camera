@@ -427,15 +427,19 @@ export class CameraComponent implements OnInit, OnDestroy {
       
       const video = this.videoElement.nativeElement;
       if (video.videoWidth === 0 || video.videoHeight === 0) {
-        // Try again shortly until metadata is available
-        setTimeout(streamFrame, 100);
+        setTimeout(streamFrame, 200);
         return;
       }
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
       
-      ctx.drawImage(video, 0, 0);
-      const frameData = canvas.toDataURL('image/jpeg', 0.8);
+      // Downscale to reduce payload size for SockJS/STOMP
+      const targetWidth = 480;
+      const scale = targetWidth / video.videoWidth;
+      const targetHeight = Math.round(video.videoHeight * scale);
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      const frameData = canvas.toDataURL('image/jpeg', 0.5);
       
       if (this.currentSession) {
         this.cameraService.sendCameraFrame(this.currentSession.sessionId, {
@@ -445,11 +449,10 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
       
       if (this.isCameraActive) {
-        setTimeout(streamFrame, 100); // ~10 FPS
+        setTimeout(streamFrame, 200); // ~5 FPS
       }
     };
     
-    // Start streaming immediately if possible, and also on metadata load
     const videoEl = this.videoElement.nativeElement;
     const startIfReady = () => {
       if (!this.isCameraActive) return;
