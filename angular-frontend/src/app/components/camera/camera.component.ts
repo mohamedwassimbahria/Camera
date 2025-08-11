@@ -90,7 +90,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-success" 
                 (click)="toggleRecording()"
-                [disabled]="!isCameraActive">
+                [disabled]="!isCameraActive || isViewing">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
                 {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
@@ -99,9 +99,13 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-info" 
                 (click)="takeScreenshot()"
-                [disabled]="!isCameraActive">
+                [disabled]="!isCameraActive || isViewing">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
+
+              <div *ngIf="isViewing" class="text-center text-muted mt-2">
+                <small>Recording and screenshots are controlled from the active camera device.</small>
+              </div>
             </div>
             
             <div class="mt-4" *ngIf="recordingTime > 0">
@@ -459,7 +463,7 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
       
       if (this.isCameraActive) {
-        setTimeout(streamFrame, 200); // ~5 FPS
+        setTimeout(streamFrame, 66); // ~15 FPS
       }
     };
     
