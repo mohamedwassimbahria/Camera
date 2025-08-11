@@ -52,6 +52,8 @@ export class CameraService {
   private isConnectedSubject = new BehaviorSubject<boolean>(false);
   private currentSessionSubject = new BehaviorSubject<CameraSession | null>(null);
   private cameraFrameSubject = new BehaviorSubject<any>(null);
+  private currentSubscribedSessionId: string | null = null;
+  private currentSubscription: any | null = null;
   
   public isConnected$ = this.isConnectedSubject.asObservable();
   public currentSession$ = this.currentSessionSubject.asObservable();
@@ -103,11 +105,21 @@ export class CameraService {
       console.error('WebSocket not connected');
       return;
     }
+    // Deduplicate subscription: unsubscribe previous if different
+    if (this.currentSubscribedSessionId === sessionId && this.currentSubscription) {
+      return;
+    }
+    if (this.currentSubscription) {
+      try { this.currentSubscription.unsubscribe(); } catch {}
+      this.currentSubscription = null;
+      this.currentSubscribedSessionId = null;
+    }
 
-    this.stompClient.subscribe(`/topic/camera/${sessionId}`, (message) => {
+    this.currentSubscription = this.stompClient.subscribe(`/topic/camera/${sessionId}`, (message) => {
       const frameData = JSON.parse(message.body);
       this.cameraFrameSubject.next(frameData);
     });
+    this.currentSubscribedSessionId = sessionId;
   }
 
   async sendCameraFrame(sessionId: string, frameData: any): Promise<void> {
@@ -190,11 +202,20 @@ export class CameraService {
     this.currentSessionSubject.next(session);
   }
 
+  unsubscribeFromCurrent(): void {
+    if (this.currentSubscription) {
+      try { this.currentSubscription.unsubscribe(); } catch {}
+      this.currentSubscription = null;
+      this.currentSubscribedSessionId = null;
+    }
+  }
+
   disconnectWebSocket(): void {
     if (this.stompClient) {
       this.stompClient.deactivate();
       this.connectionPromise = null;
       this.isConnectedSubject.next(false);
+      this.unsubscribeFromCurrent();
     }
   }
 }

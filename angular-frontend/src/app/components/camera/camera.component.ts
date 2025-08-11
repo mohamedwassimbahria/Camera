@@ -399,9 +399,10 @@ export class CameraComponent implements OnInit, OnDestroy {
 
   joinViewing(): void {
     if (!this.viewingSessionId) return;
+    this.cameraService.unsubscribeFromCurrent();
     this.isViewing = true;
     this.isCameraActive = false;
-    this.latestFrameSrc = null;
+    this.latestFrameSrc = null; // remain blank until first frame arrives
     this.cameraService.subscribeToSession(this.viewingSessionId);
   }
 
