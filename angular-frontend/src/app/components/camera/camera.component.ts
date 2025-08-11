@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, NgZone } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CameraService, CameraSession } from '../../services/camera.service';
@@ -31,8 +32,8 @@ import { Subscription } from 'rxjs';
                 playsinline
                 [style.display]="isCameraActive ? 'block' : 'none'">
               </video>
-              <img *ngIf="!isCameraActive && isViewing && latestFrameSrc" 
-                   [src]="latestFrameSrc" 
+              <img *ngIf="!isCameraActive && isViewing && latestFrameSafeUrl" 
+                   [src]="latestFrameSafeUrl" 
                    class="video-stream" 
                    [alt]="'Remote session ' + viewingSessionId">
               <div *ngIf="!isCameraActive && (!isViewing || !latestFrameSrc)" class="d-flex justify-content-center align-items-center" style="height: 300px; background: #f8f9fa;">
@@ -235,13 +236,14 @@ export class CameraComponent implements OnInit, OnDestroy {
   viewingSessionId: string = '';
   isViewing: boolean = false;
   latestFrameSrc: string | null = null;
+  latestFrameSafeUrl: SafeUrl | null = null;
   
   private get isIOS(): boolean {
     const ua = navigator.userAgent || navigator.vendor;
     return /iPad|iPhone|iPod/.test(ua);
   }
   
-  constructor(private cameraService: CameraService, private ngZone: NgZone) {}
+  constructor(private cameraService: CameraService, private ngZone: NgZone, private sanitizer: DomSanitizer) {}
   
   ngOnInit(): void {
     this.cameraService.connectWebSocket();
@@ -265,7 +267,9 @@ export class CameraComponent implements OnInit, OnDestroy {
       this.cameraService.cameraFrame$.subscribe(framePayload => {
         if (!this.isCameraActive && this.isViewing && framePayload?.frame) {
           this.ngZone.run(() => {
-            this.latestFrameSrc = framePayload.frame as string;
+            const raw = framePayload.frame as string;
+            this.latestFrameSrc = raw;
+            this.latestFrameSafeUrl = this.sanitizer.bypassSecurityTrustUrl(raw);
           });
         }
       })
@@ -342,6 +346,7 @@ export class CameraComponent implements OnInit, OnDestroy {
           this.isCameraActive = true;
           this.isViewing = false;
           this.latestFrameSrc = null;
+          this.latestFrameSafeUrl = null;
           this.startFrameStreaming();
         },
         error: (error) => {
@@ -405,12 +410,14 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.isViewing = true;
     this.isCameraActive = false;
     this.latestFrameSrc = null; // remain blank until first frame arrives
+    this.latestFrameSafeUrl = null;
     this.cameraService.subscribeToSession(this.viewingSessionId);
   }
 
   leaveViewing(): void {
     this.isViewing = false;
     this.latestFrameSrc = null;
+    this.latestFrameSafeUrl = null;
   }
   
   private stopMediaStream(): void {
