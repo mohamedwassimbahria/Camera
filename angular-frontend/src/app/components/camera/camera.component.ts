@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CameraService, CameraSession } from '../../services/camera.service';
@@ -241,7 +241,7 @@ export class CameraComponent implements OnInit, OnDestroy {
     return /iPad|iPhone|iPod/.test(ua);
   }
   
-  constructor(private cameraService: CameraService) {}
+  constructor(private cameraService: CameraService, private ngZone: NgZone) {}
   
   ngOnInit(): void {
     this.cameraService.connectWebSocket();
@@ -264,7 +264,9 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.cameraService.cameraFrame$.subscribe(framePayload => {
         if (!this.isCameraActive && this.isViewing && framePayload?.frame) {
-          this.latestFrameSrc = framePayload.frame;
+          this.ngZone.run(() => {
+            this.latestFrameSrc = framePayload.frame as string;
+          });
         }
       })
     );
