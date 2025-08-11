@@ -1,26 +1,56 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./scripts/generate-dev-cert.sh <IP_ADDRESS>
-# Example: ./scripts/generate-dev-cert.sh 192.168.1.107
-# Generates cert.pem and key.pem in the Angular project root with SAN for the given IP.
+# This script generates a self-signed SSL certificate for development.
+# It automatically detects the local IP address to include in the certificate's
+# Subject Alternative Name (SAN), which is required by modern browsers like
+# Chrome and Safari (especially on iOS) to trust the certificate for IP-based access.
 
-IP_ADDRESS="${1:-127.0.0.1}"
 # Resolve Angular project root (one level up from this script)
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CERT_PATH="${PROJECT_ROOT}/cert.pem"
 KEY_PATH="${PROJECT_ROOT}/key.pem"
 
-echo "Generating self-signed cert for IP: ${IP_ADDRESS}"
+# --- Auto-detect IP Address ---
+# Default to localhost if no specific IP is found
+IP_ADDRESS="127.0.0.1"
+if command -v hostname &> /dev/null && [[ "$(hostname -I)" ]]; then
+    # Linux-like systems (takes the first IP)
+    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+elif command -v ipconfig &> /dev/null && ipconfig getifaddr en0 &> /dev/null; then
+    # macOS (for Wi-Fi)
+    IP_ADDRESS=$(ipconfig getifaddr en0)
+elif command -v ipconfig &> /dev/null && ipconfig getifaddr en1 &> /dev/null; then
+    # macOS (for Ethernet)
+    IP_ADDRESS=$(ipconfig getifaddr en1)
+fi
 
-echo "Output cert: ${CERT_PATH}"
-echo "Output key : ${KEY_PATH}"
+echo "===================================================================="
+echo "  Generating Self-Signed SSL Certificate"
+echo "===================================================================="
+echo
+echo "  This will generate 'cert.pem' and 'key.pem' in the project root."
+echo "  The certificate will be valid for:"
+echo "    - https://localhost:4200"
+echo "    - https://${IP_ADDRESS}:4200 (for mobile device access)"
+echo
+echo "  Detected IP Address: ${IP_ADDRESS}"
+echo
 
-# OpenSSL command with IP-based SAN so iOS/Safari accepts it
+# --- OpenSSL command with Subject Alternative Name (SAN) ---
+# The SAN field is crucial for modern browsers (Chrome, Safari) to trust the certificate.
+# It allows specifying multiple hostnames/IPs. A Common Name (CN) alone is no longer sufficient.
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
   -keyout "${KEY_PATH}" -out "${CERT_PATH}" \
-  -subj "/CN=${IP_ADDRESS}" \
-  -addext "subjectAltName = IP:${IP_ADDRESS}"
+  -subj "/CN=localhost" \
+  -addext "subjectAltName = DNS:localhost,IP:${IP_ADDRESS}"
 
-echo "Done. Start Angular with:"
-echo "  npx ng serve --host 0.0.0.0 --port 4200 --ssl --ssl-cert cert.pem --ssl-key key.pem --allowed-hosts all"
+echo "===================================================================="
+echo "  Certificate generated successfully!"
+echo "===================================================================="
+echo
+echo "  You can now start the Angular server with:"
+echo "    npm start"
+echo
+echo "  To access from your phone, browse to: https://${IP_ADDRESS}:4200"
+echo "===================================================================="
