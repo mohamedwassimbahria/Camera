@@ -24,7 +24,7 @@ spring:
   # CORS Configuration
   web:
     cors:
-      allowed-origins: "http://localhost:4200"
+      allowed-origins: "https://localhost:4200"
       allowed-methods: "*"
       allowed-headers: "*"
 
@@ -36,7 +36,7 @@ file:
 # WebSocket Configuration
 websocket:
   endpoint: /ws
-  allowed-origins: "http://localhost:4200"
+  allowed-origins: "https://localhost:4200"
 
 logging:
   level:
