@@ -79,9 +79,12 @@ public class CameraStreamingService {
         Path uploadPath = Paths.get(uploadDir, "videos");
         Files.createDirectories(uploadPath);
         
-        // Generate unique filename
+        // Generate unique filename preserving extension
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
         String filename = "video_" + System.currentTimeMillis() + extension;
         
         // Save file
@@ -96,6 +99,10 @@ public class CameraStreamingService {
             deviceId,
             sessionId
         );
+        // Persist MIME type from upload (e.g., video/mp4 on iOS Safari)
+        if (file.getContentType() != null) {
+            videoRecord.setMimeType(file.getContentType());
+        }
         
         videoRecord = videoRepository.save(videoRecord);
         
@@ -110,9 +117,12 @@ public class CameraStreamingService {
         Path uploadPath = Paths.get(uploadDir, "screenshots");
         Files.createDirectories(uploadPath);
         
-        // Generate unique filename
+        // Generate unique filename preserving extension
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
         String filename = "screenshot_" + System.currentTimeMillis() + extension;
         
         // Save file
@@ -127,6 +137,9 @@ public class CameraStreamingService {
             deviceId,
             sessionId
         );
+        if (file.getContentType() != null) {
+            screenshot.setMimeType(file.getContentType());
+        }
         
         screenshot = screenshotRepository.save(screenshot);
         

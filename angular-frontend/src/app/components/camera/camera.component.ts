@@ -611,6 +611,11 @@ export class CameraComponent implements OnInit, OnDestroy {
   }
   
   takeScreenshot(): void {
+    // If this device is the viewer (not camera), send command to remote
+    if (!this.isCameraActive && this.isViewing && this.viewingSessionId) {
+      this.sendCommand('TAKE_SCREENSHOT');
+      return;
+    }
     if (!this.videoElement?.nativeElement || !this.currentSession) return;
     
     const canvas = document.createElement('canvas');
