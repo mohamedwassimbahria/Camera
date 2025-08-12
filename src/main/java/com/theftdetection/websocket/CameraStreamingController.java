@@ -45,4 +45,12 @@ public class CameraStreamingController {
         // Handle WebRTC signaling for peer-to-peer connection
         messagingTemplate.convertAndSend("/topic/camera/signal/" + sessionId, signalData);
     }
+
+    @MessageMapping("/camera/command/{sessionId}")
+    public void handleCameraCommand(@DestinationVariable String sessionId, @Payload Map<String, Object> command) {
+        // Broadcast the command to the specific camera session to be handled by the device.
+        // e.g., { "command": "TOGGLE_RECORDING" } or { "command": "TAKE_SCREENSHOT" }
+        System.out.println("Received command for session " + sessionId + ": " + command.get("command"));
+        messagingTemplate.convertAndSend("/topic/camera/command/" + sessionId, command);
+    }
 }

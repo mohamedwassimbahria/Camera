@@ -89,8 +89,8 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-success" 
-                (click)="toggleRecording()"
-                [disabled]="!isCameraActive || isViewing">
+                (click)="isViewing ? sendCommand('TOGGLE_RECORDING') : toggleRecording()"
+                [disabled]="!isCameraActive && !isViewing">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
                 {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
@@ -98,14 +98,10 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-info" 
-                (click)="takeScreenshot()"
-                [disabled]="!isCameraActive || isViewing">
+                (click)="isViewing ? sendCommand('TAKE_SCREENSHOT') : takeScreenshot()"
+                [disabled]="!isCameraActive && !isViewing">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
-
-              <div *ngIf="isViewing" class="text-center text-muted mt-2">
-                <small>Recording and screenshots are controlled from the active camera device.</small>
-              </div>
             </div>
             
             <div class="mt-4" *ngIf="recordingTime > 0">
@@ -279,6 +275,15 @@ export class CameraComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Subscribe to incoming commands for remote control
+    this.subscriptions.push(
+      this.cameraService.cameraCommand$.subscribe(commandPayload => {
+        if (this.isCameraActive && commandPayload?.command) {
+          this.handleRemoteCommand(commandPayload.command);
+        }
+      })
+    );
+
     // Try to populate available devices (will require permission for labels)
     this.refreshDevices();
   }
@@ -423,6 +428,25 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.latestFrameSrc = null;
     this.latestFrameSafeUrl = null;
   }
+
+  sendCommand(command: string): void {
+    if (this.isViewing && this.viewingSessionId) {
+      console.log(`Sending remote command: ${command}`);
+      this.cameraService.sendControlCommand(this.viewingSessionId, command);
+    }
+  }
+
+  private handleRemoteCommand(command: string): void {
+    console.log(`Received remote command: ${command}`);
+    switch (command) {
+      case 'TOGGLE_RECORDING':
+        this.toggleRecording();
+        break;
+      case 'TAKE_SCREENSHOT':
+        this.takeScreenshot();
+        break;
+    }
+  }
   
   private stopMediaStream(): void {
     if (this.mediaStream) {
@@ -463,7 +487,7 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
       
       if (this.isCameraActive) {
-        setTimeout(streamFrame, 66); // ~15 FPS
+        setTimeout(streamFrame, 200); // ~5 FPS
       }
     };
     
