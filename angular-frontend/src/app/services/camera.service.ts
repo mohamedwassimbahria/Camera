@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Client } from '@stomp/stompjs';
+import { Client, StompSubscription } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
 
 export interface CameraSession {
@@ -53,14 +53,20 @@ export class CameraService {
   private currentSessionSubject = new BehaviorSubject<CameraSession | null>(null);
   private cameraFrameSubject = new BehaviorSubject<any>(null);
   private cameraCommandSubject = new BehaviorSubject<any>(null);
+  private newVideoSubject = new BehaviorSubject<VideoRecord | null>(null);
+  private newScreenshotSubject = new BehaviorSubject<Screenshot | null>(null);
   private currentSubscribedSessionId: string | null = null;
   private currentFrameSubscription: any | null = null;
   private currentCommandSubscription: any | null = null;
+  private videoEventSubscription: StompSubscription | null = null;
+  private screenshotEventSubscription: StompSubscription | null = null;
   
   public isConnected$ = this.isConnectedSubject.asObservable();
   public currentSession$ = this.currentSessionSubject.asObservable();
   public cameraFrame$ = this.cameraFrameSubject.asObservable();
   public cameraCommand$ = this.cameraCommandSubject.asObservable();
+  public newVideo$ = this.newVideoSubject.asObservable();
+  public newScreenshot$ = this.newScreenshotSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
@@ -83,6 +89,7 @@ export class CameraService {
           onConnect: () => {
             console.log('WebSocket Connected');
             this.isConnectedSubject.next(true);
+            this.subscribeToGlobalMediaEvents();
             resolve();
           },
           onDisconnect: () => {
@@ -115,6 +122,29 @@ export class CameraService {
     if (this.stompClient?.connected) return;
     this.connectWebSocket();
     await this.connectionPromise;
+  }
+
+  private subscribeToGlobalMediaEvents(): void {
+    if (!this.stompClient?.connected) return;
+    // Unsubscribe previous if any
+    try { this.videoEventSubscription?.unsubscribe(); } catch {}
+    try { this.screenshotEventSubscription?.unsubscribe(); } catch {}
+    this.videoEventSubscription = this.stompClient.subscribe(`/topic/videos/new`, (message) => {
+      try {
+        const video: VideoRecord = JSON.parse(message.body);
+        this.newVideoSubject.next(video);
+      } catch (e) {
+        console.warn('Failed to parse new video payload', e);
+      }
+    });
+    this.screenshotEventSubscription = this.stompClient.subscribe(`/topic/screenshots/new`, (message) => {
+      try {
+        const shot: Screenshot = JSON.parse(message.body);
+        this.newScreenshotSubject.next(shot);
+      } catch (e) {
+        console.warn('Failed to parse new screenshot payload', e);
+      }
+    });
   }
 
   async subscribeToSession(sessionId: string): Promise<void> {
@@ -264,6 +294,10 @@ export class CameraService {
       this.connectionPromise = null;
       this.isConnectedSubject.next(false);
       this.unsubscribeFromCurrent();
+      try { this.videoEventSubscription?.unsubscribe(); } catch {}
+      try { this.screenshotEventSubscription?.unsubscribe(); } catch {}
+      this.videoEventSubscription = null;
+      this.screenshotEventSubscription = null;
     }
   }
 }
