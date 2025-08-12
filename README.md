@@ -118,33 +118,41 @@ mkdir -p /workspace/uploads/screenshots
 
 ### 2. Recording Videos
 
-1. Start the camera stream
-2. Click **"Start Recording"** button
-3. Recording time will be displayed
-4. Click **"Stop Recording"** to save the video
-5. Video will be automatically uploaded and appear in recent captures
+1. Click **Start Recording** to begin recording
+2. Click **Stop Recording** to end and upload the video automatically
+3. View uploaded videos in the media section
 
 ### 3. Taking Screenshots
 
-1. Start the camera stream
-2. Click **"Take Screenshot"** button
-3. Screenshot will be captured and uploaded automatically
-4. Image will appear in recent captures
+1. Click **Take Screenshot** to capture the current frame
+2. The screenshot will be uploaded and listed under recent captures
 
-### 4. Viewing Media
+### 4. View-Only Session (Join from another device)
 
-1. Navigate to **Media Library** page
-2. Browse videos and screenshots in separate tabs
-3. Filter by device using the dropdown
-4. Download or view media files
-5. Click on screenshots for full-size preview
+1. On the iPhone (or the device acting as the camera), open the Camera page and press **Start Camera**
+2. Copy the shown Session ID
+3. On a desktop browser, open the Camera page, paste the Session ID into **View-only session**, and click **Join**
+4. The preview will appear within a second or two; Recording and Screenshot buttons work remotely (they send commands to the camera device)
 
-### 5. Dashboard Overview
+## ⚡ Performance and Reliability
 
-- View active camera sessions
-- Monitor system statistics
-- Check connection status
-- Quick access to all features
+To provide faster join times and avoid black-screen issues after multiple joins, the following improvements are included:
+
+- **Auto-reconnect and Heartbeats**: The WebSocket client automatically reconnects quickly if the connection drops and uses heartbeats to detect stale connections.
+- **Safe Re-subscription**: Switching sessions clears previous subscriptions and UI state immediately, so the viewer doesn’t show a stale black frame.
+- **Join Button Debounce**: Join is temporarily disabled while connecting to prevent rapid duplicate subscriptions.
+- **Lower-bandwidth Frames**: Frames are downscaled and compressed before being sent to keep latency low.
+
+### Troubleshooting
+
+- If you see a persistent black screen after clicking Join:
+  - Ensure the camera device has actually started a session (press **Start Camera** on the device first).
+  - Verify both devices are connected to the same network and can reach the backend on port 8080.
+  - Refresh the page and click **Leave** (if in a view-only session), then click **Join** again.
+  - Make sure you are using HTTPS when accessing from iPhone (the dev server starts with HTTPS by default using a self‑signed certificate).
+- If commands (Start Recording / Take Screenshot) don’t work in view-only mode, ensure the camera device is online; commands are delivered in real time via WebSocket to the camera device.
+
+---
 
 ## 🌐 API Endpoints
 
