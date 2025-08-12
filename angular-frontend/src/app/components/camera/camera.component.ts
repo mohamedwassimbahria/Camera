@@ -284,6 +284,29 @@ export class CameraComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Listen to new media events to reflect uploads immediately
+    this.subscriptions.push(
+      this.cameraService.newVideo$.subscribe(video => {
+        if (!video) return;
+        // Show only if it belongs to current session/device
+        const matches = (this.currentSession && video.sessionId === this.currentSession.sessionId) ||
+                        (this.isViewing && this.viewingSessionId && video.sessionId === this.viewingSessionId);
+        if (matches && !this.recentMedia.find(m => m.fileName === video.fileName)) {
+          this.recentMedia.unshift({ type: 'video', fileName: video.fileName, url: this.cameraService.downloadVideo(video.fileName) });
+        }
+      })
+    );
+    this.subscriptions.push(
+      this.cameraService.newScreenshot$.subscribe(shot => {
+        if (!shot) return;
+        const matches = (this.currentSession && shot.sessionId === this.currentSession.sessionId) ||
+                        (this.isViewing && this.viewingSessionId && shot.sessionId === this.viewingSessionId);
+        if (matches && !this.recentMedia.find(m => m.fileName === shot.fileName)) {
+          this.recentMedia.unshift({ type: 'screenshot', fileName: shot.fileName, url: this.cameraService.downloadScreenshot(shot.fileName) });
+        }
+      })
+    );
+
     // Try to populate available devices (will require permission for labels)
     this.refreshDevices();
   }
