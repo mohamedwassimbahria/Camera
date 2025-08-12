@@ -57,7 +57,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-primary" 
                 (click)="startCamera()"
-                [disabled]="isCameraActive || isLoading">
+                [disabled]="isCameraActive || isLoading || isViewing">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
                 <i class="bi bi-camera"></i> Start Camera
               </button>
@@ -74,11 +74,11 @@ import { Subscription } from 'rxjs';
               <div class="mb-2">
                 <label class="form-label">Video input device</label>
                 <div class="input-group">
-                  <select class="form-select" [(ngModel)]="selectedDeviceId" [disabled]="isCameraActive">
+                  <select class="form-select" [(ngModel)]="selectedDeviceId" [disabled]="isCameraActive || isViewing">
                     <option [ngValue]="null">Default camera</option>
                     <option *ngFor="let d of videoInputDevices" [value]="d.deviceId">{{ d.label || 'Camera ' + d.deviceId.substring(0,6) }}</option>
                   </select>
-                  <button class="btn btn-outline-secondary" type="button" (click)="refreshDevices()" [disabled]="isCameraActive">
+                  <button class="btn btn-outline-secondary" type="button" (click)="refreshDevices()" [disabled]="isCameraActive || isViewing">
                     <i class="bi bi-arrow-clockwise"></i>
                   </button>
                 </div>
@@ -90,7 +90,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-success" 
                 (click)="isViewing ? sendCommand('TOGGLE_RECORDING') : toggleRecording()"
-                [disabled]="!isCameraActive && !isViewing">
+                [disabled]="(!isCameraActive && !isViewing) || isLoading">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
                 {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
@@ -99,7 +99,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-info" 
                 (click)="isViewing ? sendCommand('TAKE_SCREENSHOT') : takeScreenshot()"
-                [disabled]="!isCameraActive && !isViewing">
+                [disabled]="(!isCameraActive && !isViewing) || isLoading">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
             </div>
@@ -119,7 +119,7 @@ import { Subscription } from 'rxjs';
                 id="deviceId"
                 [(ngModel)]="deviceId" 
                 placeholder="Enter device identifier"
-                [disabled]="isCameraActive">
+                [disabled]="isCameraActive || isViewing">
             </div>
 
             <div class="mt-4 p-3 border rounded">
@@ -129,7 +129,7 @@ import { Subscription } from 'rxjs';
               </div>
               <div class="input-group">
                 <input type="text" class="form-control" placeholder="Enter session ID to view" [(ngModel)]="viewingSessionId" [disabled]="isCameraActive">
-                <button class="btn btn-outline-primary" type="button" (click)="joinViewing()" [disabled]="isCameraActive || !viewingSessionId">
+                <button class="btn btn-outline-primary" type="button" (click)="joinViewing()" [disabled]="isCameraActive || !viewingSessionId || isLoading">
                   Join
                 </button>
               </div>
@@ -415,18 +415,25 @@ export class CameraComponent implements OnInit, OnDestroy {
 
   joinViewing(): void {
     if (!this.viewingSessionId) return;
+    // Show a quick loading state; disable actions until first frame
+    this.isLoading = true;
     this.cameraService.unsubscribeFromCurrent();
     this.isViewing = true;
     this.isCameraActive = false;
-    this.latestFrameSrc = null; // remain blank until first frame arrives
+    // Clear stale preview until first frame arrives
+    this.latestFrameSrc = null;
     this.latestFrameSafeUrl = null;
-    this.cameraService.subscribeToSession(this.viewingSessionId);
+    this.cameraService.subscribeToSession(this.viewingSessionId).then(() => {
+      // Stop loading after subscription; first frame will display soon after
+      this.isLoading = false;
+    });
   }
 
   leaveViewing(): void {
     this.isViewing = false;
     this.latestFrameSrc = null;
     this.latestFrameSafeUrl = null;
+    this.cameraService.unsubscribeFromCurrent();
   }
 
   sendCommand(command: string): void {
@@ -614,7 +621,7 @@ export class CameraComponent implements OnInit, OnDestroy {
   
   getStatusClass(): string {
     if (this.isRecording) return 'status-recording';
-    if (this.isCameraActive) return 'status-connected';
+    if (this.isCameraActive || this.isViewing) return 'status-connected';
     return 'status-disconnected';
   }
   

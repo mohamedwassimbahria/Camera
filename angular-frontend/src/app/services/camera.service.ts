@@ -75,6 +75,10 @@ export class CameraService {
       this.connectionPromise = new Promise<void>((resolve) => {
         this.stompClient = new Client({
           webSocketFactory: () => new SockJS(this.wsUrl),
+          // Attempt quick auto-reconnects for better UX when switching/joining
+          reconnectDelay: 2000,
+          heartbeatIncoming: 10000,
+          heartbeatOutgoing: 10000,
           debug: (str) => console.log('STOMP: ' + str),
           onConnect: () => {
             console.log('WebSocket Connected');
@@ -88,8 +92,20 @@ export class CameraService {
           },
           onStompError: (frame) => {
             console.error('STOMP Error: ', frame);
+            this.isConnectedSubject.next(false);
           }
         });
+        // Handle low-level socket close/errors (e.g., network hiccups)
+        this.stompClient.onWebSocketClose = () => {
+          console.warn('WebSocket closed');
+          this.isConnectedSubject.next(false);
+          // Allow a fresh connect attempt
+          this.connectionPromise = null;
+        };
+        this.stompClient.onWebSocketError = (ev) => {
+          console.error('WebSocket error', ev);
+          this.isConnectedSubject.next(false);
+        };
         this.stompClient.activate();
       });
     }
@@ -113,6 +129,10 @@ export class CameraService {
       return;
     }
     this.unsubscribeFromCurrent();
+
+    // Clear previous frame/command payloads so UI shows Connecting state quickly
+    this.cameraFrameSubject.next(null);
+    this.cameraCommandSubject.next(null);
 
     // Subscribe to frame topic
     this.currentFrameSubscription = this.stompClient.subscribe(`/topic/camera/${sessionId}`, (message) => {
@@ -233,6 +253,9 @@ export class CameraService {
       this.currentCommandSubscription = null;
     }
     this.currentSubscribedSessionId = null;
+    // Reset last-known payloads so UI can reflect cleared state
+    this.cameraFrameSubject.next(null);
+    this.cameraCommandSubject.next(null);
   }
 
   disconnectWebSocket(): void {
