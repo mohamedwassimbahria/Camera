@@ -89,7 +89,7 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-success" 
-                (click)="isViewing ? sendCommand('TOGGLE_RECORDING') : toggleRecording()"
+                (click)="toggleRecording()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
@@ -98,7 +98,7 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-info" 
-                (click)="isViewing ? sendCommand('TAKE_SCREENSHOT') : takeScreenshot()"
+                (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
@@ -501,10 +501,15 @@ export class CameraComponent implements OnInit, OnDestroy {
     console.log(`Received remote command: ${command}`);
     switch (command) {
       case 'TOGGLE_RECORDING':
-        this.toggleRecording();
+        // If this device is the camera, perform local record toggle
+        if (this.isCameraActive) {
+          this.toggleRecording();
+        }
         break;
       case 'TAKE_SCREENSHOT':
-        this.takeScreenshot();
+        if (this.isCameraActive) {
+          this.takeScreenshot();
+        }
         break;
     }
   }

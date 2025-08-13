@@ -31,6 +31,9 @@ public class CameraController {
     @Autowired
     private CameraStreamingService cameraService;
 
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     @PostMapping("/start-session")
     public ResponseEntity<Map<String, Object>> startSession(
             @RequestParam String deviceId,
@@ -47,6 +50,17 @@ public class CameraController {
         response.put("message", "Camera session started successfully");
         
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/command")
+    public ResponseEntity<Map<String, Object>> postCommand(@RequestBody Map<String,Object> payload) {
+        String sessionId = String.valueOf(payload.get("sessionId"));
+        String command = String.valueOf(payload.get("command"));
+        messagingTemplate.convertAndSend("/topic/camera/command/" + sessionId, payload);
+        Map<String,Object> res = new HashMap<>();
+        res.put("success", true);
+        res.put("message", "Command forwarded");
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/end-session")

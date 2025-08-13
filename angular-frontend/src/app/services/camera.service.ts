@@ -265,6 +265,12 @@ export class CameraService {
 
     if (!this.stompClient?.connected) {
       console.error('WebSocket not connected');
+      // Fallback to REST command endpoint if WS is down
+      try {
+        await this.http.post(`${this.apiUrl}/command`, { sessionId, command, ...payload }).toPromise();
+      } catch (e) {
+        console.error('Failed to send command via REST', e);
+      }
       return;
     }
 
@@ -272,6 +278,11 @@ export class CameraService {
       destination: `/app/camera/command/${sessionId}`,
       body: JSON.stringify({ command, ...payload })
     });
+  }
+
+  // Optional REST endpoint for command when WS path is unreliable on mobile networks
+  postCommand(sessionId: string, command: string, payload: any = {}): Observable<any> {
+    return this.http.post(`${this.apiUrl}/command`, { sessionId, command, ...payload });
   }
 
   unsubscribeFromCurrent(): void {
