@@ -237,6 +237,15 @@ export class CameraComponent implements OnInit, OnDestroy {
   isViewing: boolean = false;
   latestFrameSrc: string | null = null;
   latestFrameSafeUrl: SafeUrl | null = null;
+  remoteDeviceId: string | null = null;
+
+  // Viewer-side recording state
+  private viewerCanvas: HTMLCanvasElement | null = null;
+  private viewerCtx: CanvasRenderingContext2D | null = null;
+  private viewerStream: MediaStream | null = null;
+  private viewerRecorder: MediaRecorder | null = null;
+  private viewerChunks: Blob[] = [];
+  private pendingFrameImg: HTMLImageElement | null = null;
   
   private get isIOS(): boolean {
     const ua = navigator.userAgent || navigator.vendor;
@@ -270,6 +279,22 @@ export class CameraComponent implements OnInit, OnDestroy {
             const raw = framePayload.frame as string;
             this.latestFrameSrc = raw;
             this.latestFrameSafeUrl = this.sanitizer.bypassSecurityTrustUrl(raw);
+            // If viewer-side recording is active, draw frame into offscreen canvas
+            if (this.viewerCtx && this.viewerCanvas) {
+              const img = new Image();
+              img.onload = () => {
+                try {
+                  if (!this.viewerCanvas) return;
+                  if (this.viewerCanvas.width === 0 || this.viewerCanvas.height === 0) {
+                    this.viewerCanvas.width = img.width;
+                    this.viewerCanvas.height = img.height;
+                  }
+                  this.viewerCtx!.drawImage(img, 0, 0, this.viewerCanvas.width, this.viewerCanvas.height);
+                } catch {}
+              };
+              img.src = raw;
+              this.pendingFrameImg = img;
+            }
           });
         }
       })
@@ -450,6 +475,11 @@ export class CameraComponent implements OnInit, OnDestroy {
       // Stop loading after subscription; first frame will display soon after
       this.isLoading = false;
     });
+    // Fetch remote deviceId for attribution
+    this.cameraService.getSession(this.viewingSessionId).subscribe({
+      next: (s) => { this.remoteDeviceId = s.deviceId; },
+      error: () => { this.remoteDeviceId = null; }
+    });
   }
 
   leaveViewing(): void {
@@ -457,6 +487,7 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.latestFrameSrc = null;
     this.latestFrameSafeUrl = null;
     this.cameraService.unsubscribeFromCurrent();
+    this.stopViewerRecording();
   }
 
   sendCommand(command: string): void {
@@ -535,7 +566,12 @@ export class CameraComponent implements OnInit, OnDestroy {
   
   toggleRecording(): void {
     if (this.isViewing && !this.isCameraActive) {
-      this.sendCommand('TOGGLE_RECORDING');
+      // Prefer viewer-side recording to guarantee DB persistence even if phone cannot record
+      if (!this.isRecording) {
+        this.startViewerRecording();
+      } else {
+        this.stopViewerRecording();
+      }
       return;
     }
     if (this.isRecording) {
@@ -544,7 +580,72 @@ export class CameraComponent implements OnInit, OnDestroy {
       this.startRecording();
     }
   }
-  
+
+  private startViewerRecording(): void {
+    if (!this.latestFrameSrc || !this.viewingSessionId) {
+      alert('Waiting for frames from remote camera...');
+      return;
+    }
+    try {
+      this.viewerCanvas = document.createElement('canvas');
+      this.viewerCtx = this.viewerCanvas.getContext('2d');
+      // Initialize size using current frame
+      const img = new Image();
+      img.onload = () => {
+        if (!this.viewerCanvas) return;
+        this.viewerCanvas.width = img.width;
+        this.viewerCanvas.height = img.height;
+      };
+      img.src = this.latestFrameSrc;
+      this.viewerStream = this.viewerCanvas.captureStream(5);
+      this.viewerChunks = [];
+      // Choose supported mime
+      const candidates = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+      let chosen: string | undefined;
+      for (const t of candidates) {
+        // @ts-ignore
+        if ((MediaRecorder as any).isTypeSupported && (MediaRecorder as any).isTypeSupported(t)) { chosen = t; break; }
+      }
+      this.viewerRecorder = new MediaRecorder(this.viewerStream, chosen ? { mimeType: chosen } as any : undefined as any);
+      this.viewerRecorder.ondataavailable = (ev) => { if (ev.data.size > 0) this.viewerChunks.push(ev.data); };
+      this.viewerRecorder.onstop = () => { this.saveViewerRecording(); };
+      this.viewerRecorder.start();
+      this.isRecording = true;
+      this.recordingTime = 0;
+      this.recordingInterval = setInterval(() => { this.recordingTime++; }, 1000);
+    } catch (e) {
+      console.error('Failed to start viewer recording', e);
+      alert('Recording not supported in this browser.');
+    }
+  }
+
+  private stopViewerRecording(): void {
+    if (this.viewerRecorder && this.isRecording) {
+      this.viewerRecorder.stop();
+    }
+    this.isRecording = false;
+    if (this.recordingInterval) { clearInterval(this.recordingInterval); this.recordingInterval = null; }
+  }
+
+  private saveViewerRecording(): void {
+    if (this.viewerChunks.length === 0 || !this.viewingSessionId) return;
+    const mime = this.viewerRecorder && (this.viewerRecorder as any).mimeType || this.viewerChunks[0]?.type || 'video/webm';
+    const blob = new Blob(this.viewerChunks, { type: mime });
+    const ext = mime.includes('webm') ? 'webm' : 'mp4';
+    const file = new File([blob], `viewer_recording_${Date.now()}.${ext}`, { type: mime });
+    const deviceIdForUpload = this.remoteDeviceId || 'remote-viewer';
+    this.cameraService.uploadVideo(file, deviceIdForUpload, this.viewingSessionId).subscribe({
+      next: () => {},
+      error: (err) => { console.error('Viewer recording upload failed', err); }
+    });
+    // cleanup
+    this.viewerChunks = [];
+    this.viewerRecorder = null;
+    if (this.viewerStream) { this.viewerStream.getTracks().forEach(t => t.stop()); this.viewerStream = null; }
+    this.viewerCanvas = null; this.viewerCtx = null;
+    this.recordingTime = 0;
+  }
+
   private startRecording(): void {
     if (!this.mediaStream) return;
     
@@ -634,7 +735,15 @@ export class CameraComponent implements OnInit, OnDestroy {
   takeScreenshot(): void {
     // If this device is the viewer (not camera), send command to remote
     if (!this.isCameraActive && this.isViewing && this.viewingSessionId) {
-      this.sendCommand('TAKE_SCREENSHOT');
+      // Prefer viewer-side upload using latest frame for reliability
+      if (!this.latestFrameSrc) { alert('Waiting for a frame from remote camera...'); return; }
+      const blob = this.dataUrlToBlob(this.latestFrameSrc);
+      const file = new File([blob], `viewer_screenshot_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const deviceIdForUpload = this.remoteDeviceId || 'remote-viewer';
+      this.cameraService.uploadScreenshot(file, deviceIdForUpload, this.viewingSessionId).subscribe({
+        next: () => {},
+        error: (err) => { console.error('Viewer screenshot upload failed', err); }
+      });
       return;
     }
     if (!this.videoElement?.nativeElement || !this.currentSession) return;
@@ -667,7 +776,17 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
     }, 'image/png');
   }
-  
+
+  private dataUrlToBlob(dataUrl: string): Blob {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+    return new Blob([u8arr], { type: mime });
+  }
+
   getStatusClass(): string {
     if (this.isRecording) return 'status-recording';
     if (this.isCameraActive || this.isViewing) return 'status-connected';
