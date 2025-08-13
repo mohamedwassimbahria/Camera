@@ -90,7 +90,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-success" 
                 (click)="isViewing ? sendCommand('TOGGLE_RECORDING') : toggleRecording()"
-                [disabled]="(!isCameraActive && !isViewing) || isLoading">
+                [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
                 {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
@@ -99,7 +99,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-info" 
                 (click)="isViewing ? sendCommand('TAKE_SCREENSHOT') : takeScreenshot()"
-                [disabled]="(!isCameraActive && !isViewing) || isLoading">
+                [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
             </div>
@@ -547,9 +547,24 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.recordedChunks = [];
     
     try {
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, {
-        mimeType: 'video/webm;codecs=vp9'
-      });
+      // Pick a MIME type supported by the current browser (Safari iOS prefers MP4/H264)
+      const preferredTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4;codecs=h264',
+        'video/mp4'
+      ];
+      let chosenType: string | undefined = undefined;
+      for (const t of preferredTypes) {
+        // @ts-ignore
+        if (typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported && (MediaRecorder as any).isTypeSupported(t)) {
+          chosenType = t;
+          break;
+        }
+      }
+      const options = chosenType ? { mimeType: chosenType } : undefined as any;
+      this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
       
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -590,8 +605,10 @@ export class CameraComponent implements OnInit, OnDestroy {
   private saveRecording(): void {
     if (this.recordedChunks.length === 0 || !this.currentSession) return;
     
-    const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-    const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+    const mimeFromRecorder = this.mediaRecorder && (this.mediaRecorder as any).mimeType || this.recordedChunks[0]?.type || 'video/webm';
+    const ext = mimeFromRecorder.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(this.recordedChunks, { type: mimeFromRecorder });
+    const file = new File([blob], `recording_${Date.now()}.${ext}`, { type: mimeFromRecorder });
     
     this.cameraService.uploadVideo(file, this.deviceId, this.currentSession.sessionId).subscribe({
       next: (response) => {
