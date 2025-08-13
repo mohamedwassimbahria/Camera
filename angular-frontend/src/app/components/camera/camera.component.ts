@@ -534,6 +534,10 @@ export class CameraComponent implements OnInit, OnDestroy {
   }
   
   toggleRecording(): void {
+    if (this.isViewing && !this.isCameraActive) {
+      this.sendCommand('TOGGLE_RECORDING');
+      return;
+    }
     if (this.isRecording) {
       this.stopRecording();
     } else {

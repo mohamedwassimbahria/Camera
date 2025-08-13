@@ -85,7 +85,8 @@ export class CameraService {
           reconnectDelay: 2000,
           heartbeatIncoming: 10000,
           heartbeatOutgoing: 10000,
-          debug: (str) => console.log('STOMP: ' + str),
+          // Disable verbose per-frame logging to keep UI responsive
+          debug: () => {},
           onConnect: () => {
             console.log('WebSocket Connected');
             this.isConnectedSubject.next(true);
