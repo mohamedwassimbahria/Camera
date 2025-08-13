@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, NgZone } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CameraService, CameraSession } from '../../services/camera.service';
@@ -31,8 +32,8 @@ import { Subscription } from 'rxjs';
                 playsinline
                 [style.display]="isCameraActive ? 'block' : 'none'">
               </video>
-              <img *ngIf="!isCameraActive && isViewing && latestFrameSrc" 
-                   [src]="latestFrameSrc" 
+              <img *ngIf="!isCameraActive && isViewing && latestFrameSafeUrl" 
+                   [src]="latestFrameSafeUrl" 
                    class="video-stream" 
                    [alt]="'Remote session ' + viewingSessionId">
               <div *ngIf="!isCameraActive && (!isViewing || !latestFrameSrc)" class="d-flex justify-content-center align-items-center" style="height: 300px; background: #f8f9fa;">
@@ -56,7 +57,7 @@ import { Subscription } from 'rxjs';
               <button 
                 class="btn btn-primary" 
                 (click)="startCamera()"
-                [disabled]="isCameraActive || isLoading">
+                [disabled]="isCameraActive || isLoading || isViewing">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
                 <i class="bi bi-camera"></i> Start Camera
               </button>
@@ -73,11 +74,11 @@ import { Subscription } from 'rxjs';
               <div class="mb-2">
                 <label class="form-label">Video input device</label>
                 <div class="input-group">
-                  <select class="form-select" [(ngModel)]="selectedDeviceId" [disabled]="isCameraActive">
+                  <select class="form-select" [(ngModel)]="selectedDeviceId" [disabled]="isCameraActive || isViewing">
                     <option [ngValue]="null">Default camera</option>
                     <option *ngFor="let d of videoInputDevices" [value]="d.deviceId">{{ d.label || 'Camera ' + d.deviceId.substring(0,6) }}</option>
                   </select>
-                  <button class="btn btn-outline-secondary" type="button" (click)="refreshDevices()" [disabled]="isCameraActive">
+                  <button class="btn btn-outline-secondary" type="button" (click)="refreshDevices()" [disabled]="isCameraActive || isViewing">
                     <i class="bi bi-arrow-clockwise"></i>
                   </button>
                 </div>
@@ -88,8 +89,8 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-success" 
-                (click)="toggleRecording()"
-                [disabled]="!isCameraActive">
+                (click)="isViewing ? sendCommand('TOGGLE_RECORDING') : toggleRecording()"
+                [disabled]="(!isCameraActive && !isViewing) || isLoading">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
                 <i class="bi" [class]="isRecording ? 'bi-stop-circle' : 'bi-record-circle'"></i>
                 {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
@@ -97,8 +98,8 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-info" 
-                (click)="takeScreenshot()"
-                [disabled]="!isCameraActive">
+                (click)="isViewing ? sendCommand('TAKE_SCREENSHOT') : takeScreenshot()"
+                [disabled]="(!isCameraActive && !isViewing) || isLoading">
                 <i class="bi bi-camera"></i> Take Screenshot
               </button>
             </div>
@@ -118,7 +119,7 @@ import { Subscription } from 'rxjs';
                 id="deviceId"
                 [(ngModel)]="deviceId" 
                 placeholder="Enter device identifier"
-                [disabled]="isCameraActive">
+                [disabled]="isCameraActive || isViewing">
             </div>
 
             <div class="mt-4 p-3 border rounded">
@@ -128,7 +129,7 @@ import { Subscription } from 'rxjs';
               </div>
               <div class="input-group">
                 <input type="text" class="form-control" placeholder="Enter session ID to view" [(ngModel)]="viewingSessionId" [disabled]="isCameraActive">
-                <button class="btn btn-outline-primary" type="button" (click)="joinViewing()" [disabled]="isCameraActive || !viewingSessionId">
+                <button class="btn btn-outline-primary" type="button" (click)="joinViewing()" [disabled]="isCameraActive || !viewingSessionId || isLoading">
                   Join
                 </button>
               </div>
@@ -235,8 +236,14 @@ export class CameraComponent implements OnInit, OnDestroy {
   viewingSessionId: string = '';
   isViewing: boolean = false;
   latestFrameSrc: string | null = null;
+  latestFrameSafeUrl: SafeUrl | null = null;
   
-  constructor(private cameraService: CameraService) {}
+  private get isIOS(): boolean {
+    const ua = navigator.userAgent || navigator.vendor;
+    return /iPad|iPhone|iPod/.test(ua);
+  }
+  
+  constructor(private cameraService: CameraService, private ngZone: NgZone, private sanitizer: DomSanitizer) {}
   
   ngOnInit(): void {
     this.cameraService.connectWebSocket();
@@ -259,7 +266,43 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.cameraService.cameraFrame$.subscribe(framePayload => {
         if (!this.isCameraActive && this.isViewing && framePayload?.frame) {
-          this.latestFrameSrc = framePayload.frame;
+          this.ngZone.run(() => {
+            const raw = framePayload.frame as string;
+            this.latestFrameSrc = raw;
+            this.latestFrameSafeUrl = this.sanitizer.bypassSecurityTrustUrl(raw);
+          });
+        }
+      })
+    );
+
+    // Subscribe to incoming commands for remote control
+    this.subscriptions.push(
+      this.cameraService.cameraCommand$.subscribe(commandPayload => {
+        if (this.isCameraActive && commandPayload?.command) {
+          this.handleRemoteCommand(commandPayload.command);
+        }
+      })
+    );
+
+    // Listen to new media events to reflect uploads immediately
+    this.subscriptions.push(
+      this.cameraService.newVideo$.subscribe(video => {
+        if (!video) return;
+        // Show only if it belongs to current session/device
+        const matches = (this.currentSession && video.sessionId === this.currentSession.sessionId) ||
+                        (this.isViewing && this.viewingSessionId && video.sessionId === this.viewingSessionId);
+        if (matches && !this.recentMedia.find(m => m.fileName === video.fileName)) {
+          this.recentMedia.unshift({ type: 'video', fileName: video.fileName, url: this.cameraService.downloadVideo(video.fileName) });
+        }
+      })
+    );
+    this.subscriptions.push(
+      this.cameraService.newScreenshot$.subscribe(shot => {
+        if (!shot) return;
+        const matches = (this.currentSession && shot.sessionId === this.currentSession.sessionId) ||
+                        (this.isViewing && this.viewingSessionId && shot.sessionId === this.viewingSessionId);
+        if (matches && !this.recentMedia.find(m => m.fileName === shot.fileName)) {
+          this.recentMedia.unshift({ type: 'screenshot', fileName: shot.fileName, url: this.cameraService.downloadScreenshot(shot.fileName) });
         }
       })
     );
@@ -282,14 +325,37 @@ export class CameraComponent implements OnInit, OnDestroy {
       const videoConstraints: MediaTrackConstraints = this.selectedDeviceId
         ? { deviceId: { exact: this.selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
         : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' };
-
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraints,
-        audio: true
-      });
+      
+      // On iOS, avoid requesting microphone initially to reduce permission friction
+      const wantAudio = !this.isIOS;
+      
+      // Primary attempt
+      try {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: wantAudio
+        });
+      } catch (primaryError: any) {
+        // Fallbacks: relax constraints and/or drop audio entirely
+        try {
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false
+          });
+        } catch (fallbackEnvError: any) {
+          // Final fallback: generic camera
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        }
+      }
       
       // Set video source
       this.videoElement.nativeElement.srcObject = this.mediaStream;
+      try {
+        await this.videoElement.nativeElement.play();
+      } catch {}
       
       // Refresh devices after permission to get labels
       await this.refreshDevices();
@@ -312,11 +378,14 @@ export class CameraComponent implements OnInit, OnDestroy {
           this.isCameraActive = true;
           this.isViewing = false;
           this.latestFrameSrc = null;
+          this.latestFrameSafeUrl = null;
           this.startFrameStreaming();
         },
         error: (error) => {
           console.error('Error starting camera session:', error);
           this.stopMediaStream();
+          this.isLoading = false;
+          alert('Could not start camera session. Ensure the backend is running on port 8080 and reachable.');
         },
         complete: () => {
           this.isLoading = false;
@@ -326,7 +395,11 @@ export class CameraComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error accessing camera:', error);
       this.isLoading = false;
-      alert('Could not access camera. Please ensure camera permissions are granted.');
+      // Provide actionable guidance, especially for iOS and insecure contexts
+      const secureHint = (!window.isSecureContext && this.isIOS)
+        ? '\nTip: On iPhone, use HTTPS (e.g., ng serve --ssl) and accept the certificate.'
+        : '';
+      alert('Could not access camera. Please ensure camera permissions are granted on your device and the camera is not in use by another app.' + secureHint);
     }
   }
   
@@ -365,15 +438,44 @@ export class CameraComponent implements OnInit, OnDestroy {
 
   joinViewing(): void {
     if (!this.viewingSessionId) return;
+    // Show a quick loading state; disable actions until first frame
+    this.isLoading = true;
+    this.cameraService.unsubscribeFromCurrent();
     this.isViewing = true;
     this.isCameraActive = false;
+    // Clear stale preview until first frame arrives
     this.latestFrameSrc = null;
-    this.cameraService.subscribeToSession(this.viewingSessionId);
+    this.latestFrameSafeUrl = null;
+    this.cameraService.subscribeToSession(this.viewingSessionId).then(() => {
+      // Stop loading after subscription; first frame will display soon after
+      this.isLoading = false;
+    });
   }
 
   leaveViewing(): void {
     this.isViewing = false;
     this.latestFrameSrc = null;
+    this.latestFrameSafeUrl = null;
+    this.cameraService.unsubscribeFromCurrent();
+  }
+
+  sendCommand(command: string): void {
+    if (this.isViewing && this.viewingSessionId) {
+      console.log(`Sending remote command: ${command}`);
+      this.cameraService.sendControlCommand(this.viewingSessionId, command);
+    }
+  }
+
+  private handleRemoteCommand(command: string): void {
+    console.log(`Received remote command: ${command}`);
+    switch (command) {
+      case 'TOGGLE_RECORDING':
+        this.toggleRecording();
+        break;
+      case 'TAKE_SCREENSHOT':
+        this.takeScreenshot();
+        break;
+    }
   }
   
   private stopMediaStream(): void {
@@ -392,11 +494,20 @@ export class CameraComponent implements OnInit, OnDestroy {
       if (!this.isCameraActive || !this.videoElement?.nativeElement) return;
       
       const video = this.videoElement.nativeElement;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setTimeout(streamFrame, 200);
+        return;
+      }
       
-      ctx.drawImage(video, 0, 0);
-      const frameData = canvas.toDataURL('image/jpeg', 0.8);
+      // Downscale to reduce payload size for SockJS/STOMP
+      const targetWidth = 480;
+      const scale = targetWidth / video.videoWidth;
+      const targetHeight = Math.round(video.videoHeight * scale);
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      const frameData = canvas.toDataURL('image/jpeg', 0.5);
       
       if (this.currentSession) {
         this.cameraService.sendCameraFrame(this.currentSession.sessionId, {
@@ -406,14 +517,20 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
       
       if (this.isCameraActive) {
-        setTimeout(streamFrame, 100); // 10 FPS
+        setTimeout(streamFrame, 200); // ~5 FPS
       }
     };
     
-    // Start streaming after video is loaded
-    this.videoElement.nativeElement.addEventListener('loadedmetadata', () => {
+    const videoEl = this.videoElement.nativeElement;
+    const startIfReady = () => {
+      if (!this.isCameraActive) return;
       streamFrame();
-    });
+    };
+    
+    if (videoEl.readyState >= 1) {
+      startIfReady();
+    }
+    videoEl.addEventListener('loadedmetadata', startIfReady, { once: true });
   }
   
   toggleRecording(): void {
@@ -494,6 +611,11 @@ export class CameraComponent implements OnInit, OnDestroy {
   }
   
   takeScreenshot(): void {
+    // If this device is the viewer (not camera), send command to remote
+    if (!this.isCameraActive && this.isViewing && this.viewingSessionId) {
+      this.sendCommand('TAKE_SCREENSHOT');
+      return;
+    }
     if (!this.videoElement?.nativeElement || !this.currentSession) return;
     
     const canvas = document.createElement('canvas');
@@ -527,7 +649,7 @@ export class CameraComponent implements OnInit, OnDestroy {
   
   getStatusClass(): string {
     if (this.isRecording) return 'status-recording';
-    if (this.isCameraActive) return 'status-connected';
+    if (this.isCameraActive || this.isViewing) return 'status-connected';
     return 'status-disconnected';
   }
   

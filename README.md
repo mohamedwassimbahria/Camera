@@ -91,11 +91,13 @@ cd angular-frontend
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (now with HTTPS by default)
 npm start
 ```
 
-The frontend will start on `http://localhost:4200`
+The frontend will start on `https://localhost:4200`.
+
+> **Note on SSL**: The first time you run `npm start`, a self-signed SSL certificate will be automatically generated for you. This is essential for accessing the camera on mobile devices, which requires a secure (HTTPS) connection.
 
 ### 3. Create Upload Directories
 
@@ -116,33 +118,41 @@ mkdir -p /workspace/uploads/screenshots
 
 ### 2. Recording Videos
 
-1. Start the camera stream
-2. Click **"Start Recording"** button
-3. Recording time will be displayed
-4. Click **"Stop Recording"** to save the video
-5. Video will be automatically uploaded and appear in recent captures
+1. Click **Start Recording** to begin recording
+2. Click **Stop Recording** to end and upload the video automatically
+3. View uploaded videos in the media section
 
 ### 3. Taking Screenshots
 
-1. Start the camera stream
-2. Click **"Take Screenshot"** button
-3. Screenshot will be captured and uploaded automatically
-4. Image will appear in recent captures
+1. Click **Take Screenshot** to capture the current frame
+2. The screenshot will be uploaded and listed under recent captures
 
-### 4. Viewing Media
+### 4. View-Only Session (Join from another device)
 
-1. Navigate to **Media Library** page
-2. Browse videos and screenshots in separate tabs
-3. Filter by device using the dropdown
-4. Download or view media files
-5. Click on screenshots for full-size preview
+1. On the iPhone (or the device acting as the camera), open the Camera page and press **Start Camera**
+2. Copy the shown Session ID
+3. On a desktop browser, open the Camera page, paste the Session ID into **View-only session**, and click **Join**
+4. The preview will appear within a second or two; Recording and Screenshot buttons work remotely (they send commands to the camera device)
 
-### 5. Dashboard Overview
+## ⚡ Performance and Reliability
 
-- View active camera sessions
-- Monitor system statistics
-- Check connection status
-- Quick access to all features
+To provide faster join times and avoid black-screen issues after multiple joins, the following improvements are included:
+
+- **Auto-reconnect and Heartbeats**: The WebSocket client automatically reconnects quickly if the connection drops and uses heartbeats to detect stale connections.
+- **Safe Re-subscription**: Switching sessions clears previous subscriptions and UI state immediately, so the viewer doesn’t show a stale black frame.
+- **Join Button Debounce**: Join is temporarily disabled while connecting to prevent rapid duplicate subscriptions.
+- **Lower-bandwidth Frames**: Frames are downscaled and compressed before being sent to keep latency low.
+
+### Troubleshooting
+
+- If you see a persistent black screen after clicking Join:
+  - Ensure the camera device has actually started a session (press **Start Camera** on the device first).
+  - Verify both devices are connected to the same network and can reach the backend on port 8080.
+  - Refresh the page and click **Leave** (if in a view-only session), then click **Join** again.
+  - Make sure you are using HTTPS when accessing from iPhone (the dev server starts with HTTPS by default using a self‑signed certificate).
+- If commands (Start Recording / Take Screenshot) don’t work in view-only mode, ensure the camera device is online; commands are delivered in real time via WebSocket to the camera device.
+
+---
 
 ## 🌐 API Endpoints
 
@@ -168,20 +178,28 @@ GET    /api/camera/download/screenshot/{filename} - Download screenshot
 /topic/sessions                  - Session notifications
 ```
 
-## 📱 Mobile Usage
+## 📱 Using Your iPhone as a Camera
 
-The application is optimized for mobile devices:
+The application is designed to stream video from your phone's camera to the web interface. Here’s how to set it up:
 
-1. **Camera Access**: Uses device's back camera by default
-2. **Touch Interface**: Mobile-friendly controls and gestures
-3. **Responsive Design**: Adapts to all screen sizes
-4. **Offline Capability**: Local storage for temporary data
+### Step 1: Start the Server
+On your computer, run `npm start` in the `angular-frontend` directory. The console will display the local IP address you can use to connect from your phone, for example:
 
-### Mobile Setup
-1. Open `http://localhost:4200` in mobile browser
-2. Accept camera permissions
-3. Use touch controls for all operations
-4. Stream will be visible on both mobile and desktop simultaneously
+```
+  To access from your phone, browse to: https://192.168.1.107:4200
+```
+
+### Step 2: Connect from Your iPhone
+1.  Open Safari on your iPhone and navigate to the `https://<YOUR_IP_ADDRESS>:4200` address shown in your terminal.
+2.  You will see a warning about an "untrusted certificate". This is expected. Click **"Show Details"** and then **"visit this website"** to proceed.
+3.  The application will load. Press the **"Start Camera"** button and grant the necessary camera permissions.
+
+### Step 3: View the Stream on Your Desktop
+1.  Once the camera is active on your phone, a **Session ID** will be displayed at the top of the screen.
+2.  On your desktop browser (at `https://localhost:4200`), find the **"View-only session"** card.
+3.  Enter the **Session ID** from your phone into the input field and click **"Join"**.
+
+You should now see your iPhone's camera stream in the desktop web interface.
 
 ## 🔧 Configuration
 
