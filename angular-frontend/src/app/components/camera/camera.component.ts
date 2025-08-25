@@ -88,7 +88,7 @@ import { Subscription } from 'rxjs';
               <hr>
               
               <button 
-                class="btn btn-pastel-success" 
+                class="btn" [ngClass]="isRecording ? 'btn-pastel-success' : 'btn-pastel-warm'" 
                 (click)="toggleRecording()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-pastel-info" 
+                class="btn btn-pastel-screenshot" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -243,6 +243,23 @@ import { Subscription } from 'rxjs';
       font-weight: 600;
     }
     .btn-pastel-danger:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    
+    /* New: specific colors requested */
+    .btn-pastel-warm {
+      background: linear-gradient(45deg, #ffd6e7, #ffe6b3);
+      border: none;
+      color: #5a1a01;
+      font-weight: 600;
+    }
+    .btn-pastel-warm:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    
+    .btn-pastel-screenshot {
+      background: linear-gradient(45deg, #ffecd2, #fcb69f);
+      border: none;
+      color: #4a2f00;
+      font-weight: 600;
+    }
+    .btn-pastel-screenshot:hover { filter: brightness(0.98); transform: translateY(-1px); }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
