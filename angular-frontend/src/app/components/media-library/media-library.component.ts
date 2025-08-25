@@ -86,11 +86,11 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
                         </div>
                       </div>
                       <div class="card-footer">
-                        <div class="d-grid gap-2">
-                          <a [href]="getVideoUrl(video.fileName)" download class="btn btn-primary btn-sm">
+                        <div class="d-flex gap-2">
+                          <a [href]="getVideoUrl(video.fileName)" download class="btn btn-primary btn-sm px-2 py-1">
                             <i class="bi bi-download"></i> Download
                           </a>
-                          <button class="btn btn-outline-danger btn-sm" (click)="confirmDeleteVideo(video)">
+                          <button class="btn btn-danger btn-sm px-2 py-1" (click)="confirmDeleteVideo(video)">
                             <i class="bi bi-trash"></i> Delete
                           </button>
                         </div>
@@ -135,11 +135,11 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
                         </div>
                       </div>
                       <div class="card-footer p-2">
-                        <div class="d-grid gap-2">
-                          <a [href]="getScreenshotUrl(screenshot.fileName)" download class="btn btn-primary btn-sm">
+                        <div class="d-flex gap-2">
+                          <a [href]="getScreenshotUrl(screenshot.fileName)" download class="btn btn-primary btn-sm px-2 py-1">
                             <i class="bi bi-download"></i> Download
                           </a>
-                          <button class="btn btn-outline-danger btn-sm" (click)="confirmDeleteScreenshot(screenshot)">
+                          <button class="btn btn-danger btn-sm px-2 py-1" (click)="confirmDeleteScreenshot(screenshot)">
                             <i class="bi bi-trash"></i> Delete
                           </button>
                         </div>

@@ -64,8 +64,8 @@ import { Subscription } from 'rxjs';
               
               <button 
                 class="btn btn-danger" 
-                (click)="stopCamera()"
-                [disabled]="!isCameraActive">
+                (click)="stopAction()"
+                [disabled]="!(isCameraActive || isViewing)">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
               </button>
               
@@ -211,7 +211,15 @@ import { Subscription } from 'rxjs';
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    /* Use default Bootstrap button palette */
+    /* Camera page button palette - subtle, professional */
+    .btn-primary { background: #556cd6; border-color: #556cd6; }
+    .btn-primary:hover { background: #4656be; border-color: #4656be; }
+    .btn-info { background: #0ea5e9; border-color: #0ea5e9; }
+    .btn-info:hover { background: #0284c7; border-color: #0284c7; }
+    .btn-danger { background: #ef4444; border-color: #ef4444; }
+    .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
+    .btn-success { background: #22c55e; border-color: #22c55e; }
+    .btn-success:hover { background: #16a34a; border-color: #16a34a; }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
@@ -449,6 +457,18 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.cameraService.setCurrentSession(null);
   }
 
+  // Unified stop action for local camera or remote session
+  stopAction(): void {
+    if (this.isViewing && this.viewingSessionId) {
+      this.sendCommand('END_SESSION');
+      this.leaveViewing();
+      return;
+    }
+    if (this.isCameraActive) {
+      this.stopCamera();
+    }
+  }
+
   async refreshDevices(): Promise<void> {
     try {
       if (!navigator.mediaDevices?.enumerateDevices) {
@@ -510,6 +530,11 @@ export class CameraComponent implements OnInit, OnDestroy {
       case 'TAKE_SCREENSHOT':
         if (this.isCameraActive) {
           this.takeScreenshot();
+        }
+        break;
+      case 'END_SESSION':
+        if (this.isCameraActive) {
+          this.stopCamera();
         }
         break;
     }
