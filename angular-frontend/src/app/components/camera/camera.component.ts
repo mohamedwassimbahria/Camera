@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-info" 
+                class="btn btn-primary" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -212,10 +212,12 @@ import { Subscription } from 'rxjs';
       100% { opacity: 1; }
     }
     /* Camera page buttons - use crisp Bootstrap tones overriding global gradients locally */
-    .btn-success { background: #198754; border-color: #198754; color: #fff; font-weight: 600; }
-    .btn-success:hover { background: #157347; border-color: #146c43; }
+    .btn-success { background: #22c55e; border-color: #22c55e; color: #fff; font-weight: 600; }
+    .btn-success:hover { background: #16a34a; border-color: #16a34a; }
     .btn-danger { background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600; }
     .btn-danger:hover { background: #bb2d3b; border-color: #b02a37; }
+    .btn-primary { background: #556cd6; border-color: #556cd6; color: #fff; font-weight: 600; }
+    .btn-primary:hover { background: #4656be; border-color: #4656be; }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
