@@ -45,9 +45,23 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .navbar-brand { font-size: 1.5rem; letter-spacing: .5px; }
-    .nav-link { margin: 0 8px; border-radius: 10px; transition: all 0.2s ease; }
-    .nav-link:hover { background: rgba(0,0,0,.05); transform: translateY(-1px); }
-    .nav-link.active { background: rgba(0,0,0,.08); }
+    .navbar-nav .nav-link {
+      margin: 0 6px;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-weight: 600;
+      color: #1f2937;
+      transition: all 0.2s ease;
+    }
+    .navbar-nav .nav-link:hover {
+      background: rgba(255,255,255,.45);
+      transform: translateY(-1px);
+    }
+    .navbar-nav .nav-link.active {
+      background: linear-gradient(45deg, #8bb4ff, #d8a8ff);
+      color: #083358;
+      box-shadow: 0 6px 18px rgba(0,0,0,.12);
+    }
     .bi { margin-right: 6px; }
   `]
 })

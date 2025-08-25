@@ -55,7 +55,7 @@ import { Subscription } from 'rxjs';
           <div class="card-body">
             <div class="d-grid gap-2">
               <button 
-                class="btn btn-primary" 
+                class="btn btn-pastel-primary" 
                 (click)="startCamera()"
                 [disabled]="isCameraActive || isLoading || isViewing">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
@@ -63,7 +63,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-danger" 
+                class="btn btn-pastel-danger" 
                 (click)="stopAction()"
                 [disabled]="!(isCameraActive || isViewing)">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
@@ -88,7 +88,7 @@ import { Subscription } from 'rxjs';
               <hr>
               
               <button 
-                class="btn btn-success" 
+                class="btn btn-pastel-success" 
                 (click)="toggleRecording()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-info" 
+                class="btn btn-pastel-info" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -211,15 +211,38 @@ import { Subscription } from 'rxjs';
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    /* Camera page button palette - subtle, professional */
-    .btn-primary { background: #556cd6; border-color: #556cd6; }
-    .btn-primary:hover { background: #4656be; border-color: #4656be; }
-    .btn-info { background: #0ea5e9; border-color: #0ea5e9; }
-    .btn-info:hover { background: #0284c7; border-color: #0284c7; }
-    .btn-danger { background: #ef4444; border-color: #ef4444; }
-    .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
-    .btn-success { background: #22c55e; border-color: #22c55e; }
-    .btn-success:hover { background: #16a34a; border-color: #16a34a; }
+    /* Camera page buttons - pastel to match app theme */
+    .btn-pastel-primary {
+      background: linear-gradient(45deg, #8bb4ff, #d8a8ff);
+      border: none;
+      color: #083358;
+      font-weight: 600;
+    }
+    .btn-pastel-primary:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    
+    .btn-pastel-info {
+      background: linear-gradient(45deg, #a0e9ff, #b9fbc0);
+      border: none;
+      color: #063b3b;
+      font-weight: 600;
+    }
+    .btn-pastel-info:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    
+    .btn-pastel-success {
+      background: linear-gradient(45deg, #b9fbc0, #a8e6ff);
+      border: none;
+      color: #0f5132;
+      font-weight: 600;
+    }
+    .btn-pastel-success:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    
+    .btn-pastel-danger {
+      background: linear-gradient(45deg, #ffd6d9, #ff9aa2);
+      border: none;
+      color: #6b1b1b;
+      font-weight: 600;
+    }
+    .btn-pastel-danger:hover { filter: brightness(0.98); transform: translateY(-1px); }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
