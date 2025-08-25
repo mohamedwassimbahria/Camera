@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   template: `
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background: linear-gradient(90deg, #5b67f1, #7c3aed);">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
       <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="#">
           <i class="bi bi-camera-video"></i> Theft Detection System
@@ -39,15 +39,15 @@ import { CommonModule } from '@angular/common';
       </div>
     </nav>
     
-    <div class="container-fluid">
+    <div class="container-fluid mt-3">
       <router-outlet></router-outlet>
     </div>
   `,
   styles: [`
     .navbar-brand { font-size: 1.5rem; letter-spacing: .5px; }
     .nav-link { margin: 0 8px; border-radius: 10px; transition: all 0.2s ease; }
-    .nav-link:hover { background: rgba(255,255,255,.12); transform: translateY(-1px); }
-    .nav-link.active { background: rgba(255,255,255,.22); }
+    .nav-link:hover { background: rgba(0,0,0,.06); transform: translateY(-1px); }
+    .nav-link.active { background: rgba(0,0,0,.08); }
     .bi { margin-right: 6px; }
   `]
 })

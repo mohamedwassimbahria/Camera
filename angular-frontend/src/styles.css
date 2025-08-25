@@ -1,7 +1,7 @@
 /* Global Styles */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #8796f3 0%, #9b6cf0 100%);
+  background: #f5f7fb;
   min-height: 100vh;
   margin: 0;
 }
@@ -31,12 +31,12 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #667eea, #764ba2);
+  background: #0d6efd;
   border: none;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(45deg, #764ba2, #667eea);
+  background: #0b5ed7;
   transform: translateY(-2px);
 }
 
