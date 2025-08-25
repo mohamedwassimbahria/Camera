@@ -214,8 +214,8 @@ import { Subscription } from 'rxjs';
     /* Camera page buttons - use crisp Bootstrap tones overriding global gradients locally */
     .btn-success { background: #22c55e; border-color: #22c55e; color: #fff; font-weight: 600; }
     .btn-success:hover { background: #16a34a; border-color: #16a34a; }
-    .btn-danger { background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600; }
-    .btn-danger:hover { background: #bb2d3b; border-color: #b02a37; }
+    .btn-danger { background: #ef4444; border-color: #ef4444; color: #fff; font-weight: 600; }
+    .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
     .btn-primary { background: #556cd6; border-color: #556cd6; color: #fff; font-weight: 600; }
     .btn-primary:hover { background: #4656be; border-color: #4656be; }
   `]
