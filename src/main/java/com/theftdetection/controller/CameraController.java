@@ -199,6 +199,22 @@ public class CameraController {
         }
     }
 
+    @DeleteMapping("/videos/{id}")
+    public ResponseEntity<Map<String,Object>> deleteVideo(@PathVariable Long id) {
+        boolean ok = cameraService.deleteVideoById(id);
+        Map<String,Object> res = new HashMap<>();
+        res.put("success", ok);
+        return ok ? ResponseEntity.ok(res) : ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/screenshots/{id}")
+    public ResponseEntity<Map<String,Object>> deleteScreenshot(@PathVariable Long id) {
+        boolean ok = cameraService.deleteScreenshotById(id);
+        Map<String,Object> res = new HashMap<>();
+        res.put("success", ok);
+        return ok ? ResponseEntity.ok(res) : ResponseEntity.notFound().build();
+    }
+
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {

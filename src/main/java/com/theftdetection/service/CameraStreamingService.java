@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.nio.file.StandardCopyOption;
 
 @Service
 public class CameraStreamingService {
@@ -171,5 +172,29 @@ public class CameraStreamingService {
 
     public Optional<CameraSession> getSessionById(String sessionId) {
         return sessionRepository.findBySessionId(sessionId);
+    }
+
+    public boolean deleteVideoById(Long id) {
+        Optional<VideoRecord> vrOpt = videoRepository.findById(id);
+        if (vrOpt.isEmpty()) return false;
+        VideoRecord vr = vrOpt.get();
+        try {
+            Path p = Paths.get(vr.getFilePath());
+            Files.deleteIfExists(p);
+        } catch (IOException ignored) {}
+        videoRepository.deleteById(id);
+        return true;
+    }
+
+    public boolean deleteScreenshotById(Long id) {
+        Optional<Screenshot> scOpt = screenshotRepository.findById(id);
+        if (scOpt.isEmpty()) return false;
+        Screenshot s = scOpt.get();
+        try {
+            Path p = Paths.get(s.getFilePath());
+            Files.deleteIfExists(p);
+        } catch (IOException ignored) {}
+        screenshotRepository.deleteById(id);
+        return true;
     }
 }

@@ -256,6 +256,14 @@ export class CameraService {
     return `${this.apiUrl}/download/screenshot/${filename}`;
   }
 
+  deleteVideo(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/videos/${id}`);
+  }
+
+  deleteScreenshot(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/screenshots/${id}`);
+  }
+
   setCurrentSession(session: CameraSession | null): void {
     this.currentSessionSubject.next(session);
   }

@@ -87,11 +87,12 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
                       </div>
                       <div class="card-footer">
                         <div class="d-grid gap-2">
-                          <a [href]="getVideoUrl(video.fileName)" 
-                             download 
-                             class="btn btn-primary btn-sm">
+                          <a [href]="getVideoUrl(video.fileName)" download class="btn btn-primary btn-sm">
                             <i class="bi bi-download"></i> Download
                           </a>
+                          <button class="btn btn-outline-danger btn-sm" (click)="confirmDeleteVideo(video)">
+                            <i class="bi bi-trash"></i> Delete
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -134,11 +135,14 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
                         </div>
                       </div>
                       <div class="card-footer p-2">
-                        <a [href]="getScreenshotUrl(screenshot.fileName)" 
-                           download 
-                           class="btn btn-primary btn-sm w-100">
-                          <i class="bi bi-download"></i> Download
-                        </a>
+                        <div class="d-grid gap-2">
+                          <a [href]="getScreenshotUrl(screenshot.fileName)" download class="btn btn-primary btn-sm">
+                            <i class="bi bi-download"></i> Download
+                          </a>
+                          <button class="btn btn-outline-danger btn-sm" (click)="confirmDeleteScreenshot(screenshot)">
+                            <i class="bi bi-trash"></i> Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -255,6 +259,28 @@ export class MediaLibraryComponent implements OnInit {
   
   setTab(tab: 'videos' | 'screenshots'): void {
     this.selectedTab = tab;
+  }
+
+  confirmDeleteVideo(video: VideoRecord): void {
+    if (!confirm(`Delete video ${video.fileName}? This cannot be undone.`)) return;
+    this.cameraService.deleteVideo(video.id).subscribe({
+      next: () => {
+        this.videos = this.videos.filter(v => v.id !== video.id);
+        this.applyFilter();
+      },
+      error: (err) => console.error('Failed to delete video', err)
+    });
+  }
+
+  confirmDeleteScreenshot(s: Screenshot): void {
+    if (!confirm(`Delete screenshot ${s.fileName}? This cannot be undone.`)) return;
+    this.cameraService.deleteScreenshot(s.id).subscribe({
+      next: () => {
+        this.screenshots = this.screenshots.filter(x => x.id !== s.id);
+        this.applyFilter();
+      },
+      error: (err) => console.error('Failed to delete screenshot', err)
+    });
   }
   
   refreshMedia(): void {

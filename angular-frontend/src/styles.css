@@ -7,10 +7,6 @@ body {
 }
 
 .container-fluid {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   margin: 20px;
   padding: 30px;
 }
@@ -154,10 +150,7 @@ body {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .container-fluid {
-    margin: 10px;
-    padding: 15px;
-  }
+  .container-fluid { margin: 10px; padding: 15px; }
   
   .card {
     margin-bottom: 20px;

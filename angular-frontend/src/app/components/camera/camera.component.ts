@@ -63,7 +63,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-outline-danger" 
+                class="btn btn-danger" 
                 (click)="stopCamera()"
                 [disabled]="!isCameraActive">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-outline-primary" 
+                class="btn btn-info" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -211,14 +211,7 @@ import { Subscription } from 'rxjs';
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    .btn-primary { background: #4c6ef5; border-color: #4c6ef5; }
-    .btn-primary:hover { background: #3b5bdb; border-color: #3b5bdb; }
-    .btn-outline-primary { border-color: #4c6ef5; color: #4c6ef5; }
-    .btn-outline-primary:hover { background: #4c6ef5; color: #fff; }
-    .btn-success { background: #2fb344; border-color: #2fb344; }
-    .btn-success:hover { background: #2b9a3a; border-color: #2b9a3a; }
-    .btn-outline-danger { border-color: #e03131; color: #e03131; }
-    .btn-outline-danger:hover { background: #e03131; color: #fff; }
+    /* Use default Bootstrap button palette */
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
