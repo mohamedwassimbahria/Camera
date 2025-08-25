@@ -55,7 +55,7 @@ import { Subscription } from 'rxjs';
           <div class="card-body">
             <div class="d-grid gap-2">
               <button 
-                class="btn btn-pastel-primary" 
+                class="btn btn-success" 
                 (click)="startCamera()"
                 [disabled]="isCameraActive || isLoading || isViewing">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
@@ -63,7 +63,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-pastel-danger" 
+                class="btn btn-danger" 
                 (click)="stopAction()"
                 [disabled]="!(isCameraActive || isViewing)">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
@@ -88,7 +88,7 @@ import { Subscription } from 'rxjs';
               <hr>
               
               <button 
-                class="btn" [ngClass]="isRecording ? 'btn-pastel-success' : 'btn-pastel-warm'" 
+                class="btn btn-success" 
                 (click)="toggleRecording()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <span class="status-indicator" [class]="isRecording ? 'status-recording' : ''"></span>
@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-pastel-screenshot" 
+                class="btn btn-info" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -211,55 +211,11 @@ import { Subscription } from 'rxjs';
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    /* Camera page buttons - pastel to match app theme */
-    .btn-pastel-primary {
-      background: linear-gradient(45deg, #8bb4ff, #d8a8ff);
-      border: none;
-      color: #083358;
-      font-weight: 600;
-    }
-    .btn-pastel-primary:hover { filter: brightness(0.98); transform: translateY(-1px); }
-    
-    .btn-pastel-info {
-      background: linear-gradient(45deg, #a0e9ff, #b9fbc0);
-      border: none;
-      color: #063b3b;
-      font-weight: 600;
-    }
-    .btn-pastel-info:hover { filter: brightness(0.98); transform: translateY(-1px); }
-    
-    .btn-pastel-success {
-      background: linear-gradient(45deg, #b9fbc0, #a8e6ff);
-      border: none;
-      color: #0f5132;
-      font-weight: 600;
-    }
-    .btn-pastel-success:hover { filter: brightness(0.98); transform: translateY(-1px); }
-    
-    .btn-pastel-danger {
-      background: linear-gradient(45deg, #ffd6d9, #ff9aa2);
-      border: none;
-      color: #6b1b1b;
-      font-weight: 600;
-    }
-    .btn-pastel-danger:hover { filter: brightness(0.98); transform: translateY(-1px); }
-    
-    /* New: specific colors requested */
-    .btn-pastel-warm {
-      background: linear-gradient(45deg, #ffd6e7, #ffe6b3);
-      border: none;
-      color: #5a1a01;
-      font-weight: 600;
-    }
-    .btn-pastel-warm:hover { filter: brightness(0.98); transform: translateY(-1px); }
-    
-    .btn-pastel-screenshot {
-      background: linear-gradient(45deg, #ffecd2, #fcb69f);
-      border: none;
-      color: #4a2f00;
-      font-weight: 600;
-    }
-    .btn-pastel-screenshot:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    /* Camera page buttons - use crisp Bootstrap tones overriding global gradients locally */
+    .btn-success { background: #198754; border-color: #198754; color: #fff; font-weight: 600; }
+    .btn-success:hover { background: #157347; border-color: #146c43; }
+    .btn-danger { background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600; }
+    .btn-danger:hover { background: #bb2d3b; border-color: #b02a37; }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
