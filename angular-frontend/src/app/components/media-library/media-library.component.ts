@@ -235,8 +235,8 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
     }
     
     .nav-tabs .nav-link.active {
-      background: linear-gradient(45deg, #667eea, #764ba2);
-      color: white;
+      background: linear-gradient(45deg, #8bb4ff, #d8a8ff);
+      color: #083358;
       border-color: transparent;
     }
     
