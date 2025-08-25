@@ -39,14 +39,12 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
             <!-- Tabs for Videos and Screenshots -->
             <ul class="nav nav-tabs mb-4" id="mediaTab" role="tablist">
               <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="videos-tab" data-bs-toggle="tab" 
-                        data-bs-target="#videos" type="button" role="tab">
+                <button class="nav-link" [class.active]="selectedTab==='videos'" type="button" role="tab" (click)="setTab('videos')">
                   <i class="bi bi-play-circle"></i> Videos ({{ filteredVideos.length }})
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="screenshots-tab" data-bs-toggle="tab" 
-                        data-bs-target="#screenshots" type="button" role="tab">
+                <button class="nav-link" [class.active]="selectedTab==='screenshots'" type="button" role="tab" (click)="setTab('screenshots')">
                   <i class="bi bi-camera"></i> Screenshots ({{ filteredScreenshots.length }})
                 </button>
               </li>
@@ -54,7 +52,7 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
             
             <div class="tab-content" id="mediaTabContent">
               <!-- Videos Tab -->
-              <div class="tab-pane fade show active" id="videos" role="tabpanel">
+              <div class="tab-pane fade" [class.show]="selectedTab==='videos'" [class.active]="selectedTab==='videos'" id="videos" role="tabpanel">
                 <div *ngIf="filteredVideos.length === 0" class="text-center py-5">
                   <i class="bi bi-play-circle display-1 text-muted"></i>
                   <h4 class="mt-3 text-muted">No videos found</h4>
@@ -102,7 +100,7 @@ import { CameraService, VideoRecord, Screenshot } from '../../services/camera.se
               </div>
               
               <!-- Screenshots Tab -->
-              <div class="tab-pane fade" id="screenshots" role="tabpanel">
+              <div class="tab-pane fade" [class.show]="selectedTab==='screenshots'" [class.active]="selectedTab==='screenshots'" id="screenshots" role="tabpanel">
                 <div *ngIf="filteredScreenshots.length === 0" class="text-center py-5">
                   <i class="bi bi-camera display-1 text-muted"></i>
                   <h4 class="mt-3 text-muted">No screenshots found</h4>
@@ -247,11 +245,16 @@ export class MediaLibraryComponent implements OnInit {
   uniqueDevices: string[] = [];
   selectedDevice: string = '';
   selectedImage: Screenshot | null = null;
+  selectedTab: 'videos' | 'screenshots' = 'videos';
   
   constructor(private cameraService: CameraService) {}
   
   ngOnInit(): void {
     this.refreshMedia();
+  }
+  
+  setTab(tab: 'videos' | 'screenshots'): void {
+    this.selectedTab = tab;
   }
   
   refreshMedia(): void {

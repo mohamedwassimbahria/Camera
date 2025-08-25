@@ -63,7 +63,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-danger" 
+                class="btn btn-outline-danger" 
                 (click)="stopCamera()"
                 [disabled]="!isCameraActive">
                 <i class="bi bi-camera-video-off"></i> Stop Camera
@@ -97,7 +97,7 @@ import { Subscription } from 'rxjs';
               </button>
               
               <button 
-                class="btn btn-info" 
+                class="btn btn-outline-primary" 
                 (click)="takeScreenshot()"
                 [disabled]="(!isCameraActive && !isViewing) || (!isViewing && isLoading)">
                 <i class="bi bi-camera"></i> Take Screenshot
@@ -211,6 +211,14 @@ import { Subscription } from 'rxjs';
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+    .btn-primary { background: #4c6ef5; border-color: #4c6ef5; }
+    .btn-primary:hover { background: #3b5bdb; border-color: #3b5bdb; }
+    .btn-outline-primary { border-color: #4c6ef5; color: #4c6ef5; }
+    .btn-outline-primary:hover { background: #4c6ef5; color: #fff; }
+    .btn-success { background: #2fb344; border-color: #2fb344; }
+    .btn-success:hover { background: #2b9a3a; border-color: #2b9a3a; }
+    .btn-outline-danger { border-color: #e03131; color: #e03131; }
+    .btn-outline-danger:hover { background: #e03131; color: #fff; }
   `]
 })
 export class CameraComponent implements OnInit, OnDestroy {
@@ -585,7 +593,7 @@ export class CameraComponent implements OnInit, OnDestroy {
       this.startRecording();
     }
   }
-
+  
   private startViewerRecording(): void {
     if (!this.latestFrameSrc || !this.viewingSessionId) {
       alert('Waiting for frames from remote camera...');
@@ -623,7 +631,7 @@ export class CameraComponent implements OnInit, OnDestroy {
       alert('Recording not supported in this browser.');
     }
   }
-
+  
   private stopViewerRecording(): void {
     if (this.viewerRecorder && this.isRecording) {
       this.viewerRecorder.stop();
@@ -631,7 +639,7 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.isRecording = false;
     if (this.recordingInterval) { clearInterval(this.recordingInterval); this.recordingInterval = null; }
   }
-
+  
   private saveViewerRecording(): void {
     if (this.viewerChunks.length === 0 || !this.viewingSessionId) return;
     const mime = this.viewerRecorder && (this.viewerRecorder as any).mimeType || this.viewerChunks[0]?.type || 'video/webm';
@@ -650,7 +658,7 @@ export class CameraComponent implements OnInit, OnDestroy {
     this.viewerCanvas = null; this.viewerCtx = null;
     this.recordingTime = 0;
   }
-
+  
   private startRecording(): void {
     if (!this.mediaStream) return;
     
@@ -781,7 +789,7 @@ export class CameraComponent implements OnInit, OnDestroy {
       }
     }, 'image/png');
   }
-
+  
   private dataUrlToBlob(dataUrl: string): Blob {
     const arr = dataUrl.split(',');
     const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
@@ -791,7 +799,7 @@ export class CameraComponent implements OnInit, OnDestroy {
     while (n--) { u8arr[n] = bstr.charCodeAt(n); }
     return new Blob([u8arr], { type: mime });
   }
-
+  
   getStatusClass(): string {
     if (this.isRecording) return 'status-recording';
     if (this.isCameraActive || this.isViewing) return 'status-connected';
@@ -808,3 +816,4 @@ export class CameraComponent implements OnInit, OnDestroy {
     return media.url;
   }
 }
+
