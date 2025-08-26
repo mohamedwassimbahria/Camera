@@ -1,0 +1,41 @@
+.card {
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.display-4 {
+  font-size: 3rem;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-connected {
+  background: #28a745;
+  box-shadow: 0 0 8px #28a745;
+}
+
+.list-group-item {
+  border-radius: 10px !important;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0,0,0,0.125);
+}
+
+.btn-lg {
+  padding: 15px 25px;
+  font-size: 1.1rem;
+}
+
+.badge {
+  font-size: 0.8rem;
+}

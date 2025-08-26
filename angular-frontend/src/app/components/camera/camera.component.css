@@ -1,0 +1,51 @@
+.video-container {
+  position: relative;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.video-stream {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+}
+
+.thumbnail {
+  height: 80px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-connected {
+  background: #28a745;
+  box-shadow: 0 0 8px #28a745;
+}
+
+.status-disconnected {
+  background: #dc3545;
+}
+
+.status-recording {
+  background: #ff6b35;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+/* Camera page buttons - crisp Bootstrap tones */
+.btn-success { background: #198754; border-color: #198754; color: #fff; font-weight: 600; }
+.btn-success:hover { background: #157347; border-color: #146c43; }
+.btn-danger { background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600; }
+.btn-danger:hover { background: #bb2d3b; border-color: #b02a37; }
