@@ -10,9 +10,11 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.theftdetection.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,12 +36,13 @@ public class CameraController {
     @PostMapping("/start-session")
     public ResponseEntity<Map<String, Object>> startSession(
             @RequestParam String deviceId,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            @AuthenticationPrincipal User user) {
         
         String ipAddress = getClientIpAddress(request);
         String userAgent = request.getHeader("User-Agent");
         
-        CameraSession session = cameraService.startSession(deviceId, ipAddress, userAgent);
+        CameraSession session = cameraService.startSession(deviceId, ipAddress, userAgent, user);
         
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -64,10 +67,11 @@ public class CameraController {
     public ResponseEntity<Map<String, Object>> uploadVideo(
             @RequestParam("file") MultipartFile file,
             @RequestParam("deviceId") String deviceId,
-            @RequestParam("sessionId") String sessionId) {
+            @RequestParam("sessionId") String sessionId,
+            @AuthenticationPrincipal User user) {
         
         try {
-            VideoRecord videoRecord = cameraService.saveVideoRecord(file, deviceId, sessionId);
+            VideoRecord videoRecord = cameraService.saveVideoRecord(file, deviceId, sessionId, user);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -89,10 +93,11 @@ public class CameraController {
     public ResponseEntity<Map<String, Object>> uploadScreenshot(
             @RequestParam("file") MultipartFile file,
             @RequestParam("deviceId") String deviceId,
-            @RequestParam("sessionId") String sessionId) {
+            @RequestParam("sessionId") String sessionId,
+            @AuthenticationPrincipal User user) {
         
         try {
-            Screenshot screenshot = cameraService.saveScreenshot(file, deviceId, sessionId);
+            Screenshot screenshot = cameraService.saveScreenshot(file, deviceId, sessionId, user);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

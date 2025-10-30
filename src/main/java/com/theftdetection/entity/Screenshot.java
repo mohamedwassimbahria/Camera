@@ -26,9 +26,6 @@ public class Screenshot {
     @Column(name = "device_id")
     private String deviceId;
     
-    @Column(name = "session_id")
-    private String sessionId;
-    
     @Column(name = "mime_type")
     private String mimeType;
     
@@ -37,16 +34,20 @@ public class Screenshot {
     
     @Column(name = "height")
     private Integer height;
+
+    @ManyToOne
+    @JoinColumn(name = "camera_session_id")
+    private CameraSession cameraSession;
     
     // Constructors
     public Screenshot() {}
     
-    public Screenshot(String fileName, String filePath, Long fileSize, String deviceId, String sessionId) {
+    public Screenshot(String fileName, String filePath, Long fileSize, String deviceId, CameraSession cameraSession) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.fileSize = fileSize;
         this.deviceId = deviceId;
-        this.sessionId = sessionId;
+        this.cameraSession = cameraSession;
         this.capturedAt = LocalDateTime.now();
         this.mimeType = "image/png";
     }
@@ -70,9 +71,6 @@ public class Screenshot {
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
     
-    public String getSessionId() { return sessionId; }
-    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
-    
     public String getMimeType() { return mimeType; }
     public void setMimeType(String mimeType) { this.mimeType = mimeType; }
     
@@ -81,4 +79,7 @@ public class Screenshot {
     
     public Integer getHeight() { return height; }
     public void setHeight(Integer height) { this.height = height; }
+
+    public CameraSession getCameraSession() { return cameraSession; }
+    public void setCameraSession(CameraSession cameraSession) { this.cameraSession = cameraSession; }
 }

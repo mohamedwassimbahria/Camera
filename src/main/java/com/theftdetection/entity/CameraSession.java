@@ -2,6 +2,7 @@ package com.theftdetection.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "camera_sessions")
@@ -31,17 +32,28 @@ public class CameraSession {
     
     @Column(name = "user_agent")
     private String userAgent;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @OneToMany(mappedBy = "cameraSession")
+    private List<Screenshot> screenshots;
+
+    @OneToMany(mappedBy = "cameraSession")
+    private List<VideoRecord> videoRecords;
     
     // Constructors
     public CameraSession() {}
     
-    public CameraSession(String sessionId, String deviceId, String ipAddress, String userAgent) {
+    public CameraSession(String sessionId, String deviceId, String ipAddress, String userAgent, User user) {
         this.sessionId = sessionId;
         this.deviceId = deviceId;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
         this.startTime = LocalDateTime.now();
         this.isActive = true;
+        this.user = user;
     }
     
     // Getters and Setters
@@ -68,4 +80,13 @@ public class CameraSession {
     
     public String getUserAgent() { return userAgent; }
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public List<Screenshot> getScreenshots() { return screenshots; }
+    public void setScreenshots(List<Screenshot> screenshots) { this.screenshots = screenshots; }
+
+    public List<VideoRecord> getVideoRecords() { return videoRecords; }
+    public void setVideoRecords(List<VideoRecord> videoRecords) { this.videoRecords = videoRecords; }
 }
