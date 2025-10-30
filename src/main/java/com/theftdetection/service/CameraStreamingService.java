@@ -155,12 +155,12 @@ public class CameraStreamingService {
         return sessionRepository.findActiveSessions();
     }
 
-    public List<VideoRecord> getVideosByDevice(String deviceId) {
-        return videoRepository.findByDeviceIdOrderByRecordedAtDesc(deviceId);
+    public List<VideoRecord> getVideosByUser(String username) {
+        return videoRepository.findByUserUsernameOrderByRecordedAtDesc(username);
     }
 
-    public List<Screenshot> getScreenshotsByDevice(String deviceId) {
-        return screenshotRepository.findByDeviceIdOrderByCapturedAtDesc(deviceId);
+    public List<Screenshot> getScreenshotsByUser(String username) {
+        return screenshotRepository.findByUserUsernameOrderByCapturedAtDesc(username);
     }
 
     public List<VideoRecord> getAllVideos() {

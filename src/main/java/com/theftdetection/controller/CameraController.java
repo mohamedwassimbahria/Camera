@@ -127,9 +127,9 @@ public class CameraController {
         return ResponseEntity.ok(videos);
     }
 
-    @GetMapping("/videos/device/{deviceId}")
-    public ResponseEntity<List<VideoRecord>> getVideosByDevice(@PathVariable String deviceId) {
-        List<VideoRecord> videos = cameraService.getVideosByDevice(deviceId);
+    @GetMapping("/videos/user")
+    public ResponseEntity<List<VideoRecord>> getVideosByUser(@AuthenticationPrincipal User user) {
+        List<VideoRecord> videos = cameraService.getVideosByUser(user.getUsername());
         return ResponseEntity.ok(videos);
     }
 
@@ -139,9 +139,9 @@ public class CameraController {
         return ResponseEntity.ok(screenshots);
     }
 
-    @GetMapping("/screenshots/device/{deviceId}")
-    public ResponseEntity<List<Screenshot>> getScreenshotsByDevice(@PathVariable String deviceId) {
-        List<Screenshot> screenshots = cameraService.getScreenshotsByDevice(deviceId);
+    @GetMapping("/screenshots/user")
+    public ResponseEntity<List<Screenshot>> getScreenshotsByUser(@AuthenticationPrincipal User user) {
+        List<Screenshot> screenshots = cameraService.getScreenshotsByUser(user.getUsername());
         return ResponseEntity.ok(screenshots);
     }
 
