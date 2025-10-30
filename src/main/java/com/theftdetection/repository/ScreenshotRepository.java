@@ -11,14 +11,12 @@ import java.util.List;
 @Repository
 public interface ScreenshotRepository extends JpaRepository<Screenshot, Long> {
     
-    List<Screenshot> findByDeviceId(String deviceId);
-    
-    List<Screenshot> findBySessionId(String sessionId);
+    List<Screenshot> findByCameraSession(CameraSession cameraSession);
     
     List<Screenshot> findByCapturedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query("SELECT s FROM Screenshot s WHERE s.deviceId = ?1 ORDER BY s.capturedAt DESC")
-    List<Screenshot> findByDeviceIdOrderByCapturedAtDesc(String deviceId);
+    @Query("SELECT s FROM Screenshot s WHERE s.cameraSession.user.username = ?1 ORDER BY s.capturedAt DESC")
+    List<Screenshot> findByUserUsernameOrderByCapturedAtDesc(String username);
     
     @Query("SELECT s FROM Screenshot s ORDER BY s.capturedAt DESC")
     List<Screenshot> findAllOrderByCapturedAtDesc();
