@@ -38,3 +38,7 @@ Thumbs.db
 
 # Java / Maven
 /target/
+
+# SSL Certificates
+cert.pem
+key.pem

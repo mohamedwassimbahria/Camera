@@ -34,6 +34,11 @@ import { CommonModule } from '@angular/common';
                 <i class="bi bi-collection-play"></i> Media Library
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/register" routerLinkActive="active">
+                <i class="bi bi-person-plus"></i> Register
+              </a>
+            </li>
           </ul>
         </div>
       </div>
