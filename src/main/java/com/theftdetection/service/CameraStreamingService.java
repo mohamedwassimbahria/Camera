@@ -39,7 +39,7 @@ public class CameraStreamingService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public CameraSession startSession(String deviceId, String ipAddress, String userAgent) {
+    public CameraSession startSession(String deviceId, String ipAddress, String userAgent, User user) {
         // End any existing active session for this device
         Optional<CameraSession> existingSession = sessionRepository.findActiveSessionByDeviceId(deviceId);
         if (existingSession.isPresent()) {
@@ -47,7 +47,7 @@ public class CameraStreamingService {
         }
         
         String sessionId = UUID.randomUUID().toString();
-        CameraSession session = new CameraSession(sessionId, deviceId, ipAddress, userAgent);
+        CameraSession session = new CameraSession(sessionId, deviceId, ipAddress, userAgent, user);
         session = sessionRepository.save(session);
         
         // Notify all connected clients about new session
@@ -74,7 +74,7 @@ public class CameraStreamingService {
         messagingTemplate.convertAndSend("/topic/camera/" + sessionId, frameData);
     }
 
-    public VideoRecord saveVideoRecord(MultipartFile file, String deviceId, String sessionId) throws IOException {
+    public VideoRecord saveVideoRecord(MultipartFile file, String deviceId, String sessionId, User user) throws IOException {
         // Create upload directory if it doesn't exist
         Path uploadPath = Paths.get(uploadDir, "videos");
         Files.createDirectories(uploadPath);
@@ -92,12 +92,13 @@ public class CameraStreamingService {
         Files.write(filePath, file.getBytes());
         
         // Create database record
+        CameraSession session = sessionRepository.findBySessionId(sessionId).orElseThrow(() -> new IOException("Session not found"));
         VideoRecord videoRecord = new VideoRecord(
             filename,
             filePath.toString(),
             file.getSize(),
             deviceId,
-            sessionId
+            session
         );
         // Persist MIME type from upload (e.g., video/mp4 on iOS Safari)
         if (file.getContentType() != null) {
@@ -112,7 +113,7 @@ public class CameraStreamingService {
         return videoRecord;
     }
 
-    public Screenshot saveScreenshot(MultipartFile file, String deviceId, String sessionId) throws IOException {
+    public Screenshot saveScreenshot(MultipartFile file, String deviceId, String sessionId, User user) throws IOException {
         // Create upload directory if it doesn't exist
         Path uploadPath = Paths.get(uploadDir, "screenshots");
         Files.createDirectories(uploadPath);
@@ -130,12 +131,13 @@ public class CameraStreamingService {
         Files.write(filePath, file.getBytes());
         
         // Create database record
+        CameraSession session = sessionRepository.findBySessionId(sessionId).orElseThrow(() -> new IOException("Session not found"));
         Screenshot screenshot = new Screenshot(
             filename,
             filePath.toString(),
             file.getSize(),
             deviceId,
-            sessionId
+            session
         );
         if (file.getContentType() != null) {
             screenshot.setMimeType(file.getContentType());

@@ -29,24 +29,25 @@ public class VideoRecord {
     @Column(name = "device_id")
     private String deviceId;
     
-    @Column(name = "session_id")
-    private String sessionId;
-    
     @Column(name = "mime_type")
     private String mimeType;
     
     @Column(name = "thumbnail_path")
     private String thumbnailPath;
+
+    @ManyToOne
+    @JoinColumn(name = "camera_session_id")
+    private CameraSession cameraSession;
     
     // Constructors
     public VideoRecord() {}
     
-    public VideoRecord(String fileName, String filePath, Long fileSize, String deviceId, String sessionId) {
+    public VideoRecord(String fileName, String filePath, Long fileSize, String deviceId, CameraSession cameraSession) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.fileSize = fileSize;
         this.deviceId = deviceId;
-        this.sessionId = sessionId;
+        this.cameraSession = cameraSession;
         this.recordedAt = LocalDateTime.now();
         this.mimeType = "video/webm";
     }
@@ -73,12 +74,12 @@ public class VideoRecord {
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
     
-    public String getSessionId() { return sessionId; }
-    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
-    
     public String getMimeType() { return mimeType; }
     public void setMimeType(String mimeType) { this.mimeType = mimeType; }
     
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
+
+    public CameraSession getCameraSession() { return cameraSession; }
+    public void setCameraSession(CameraSession cameraSession) { this.cameraSession = cameraSession; }
 }
