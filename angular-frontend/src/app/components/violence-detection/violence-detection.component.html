@@ -1,0 +1,16 @@
+<div class="container">
+  <h2>Violence Detection Results</h2>
+  <div *ngIf="videos.length > 0; else noVideos">
+    <div *ngFor="let video of videos" class="video-card">
+      <video controls>
+        <source [src]="'/api/camera/download/video/' + video.fileName" type="video/webm">
+        Your browser does not support the video tag.
+      </video>
+      <p><strong>Video:</strong> {{ video.fileName }}</p>
+      <p><strong>Detected at:</strong> {{ video.recordedAt | date:'medium' }}</p>
+    </div>
+  </div>
+  <ng-template #noVideos>
+    <p>No videos with detected violence found.</p>
+  </ng-template>
+</div>

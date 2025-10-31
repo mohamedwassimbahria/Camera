@@ -39,6 +39,11 @@ import { CommonModule } from '@angular/common';
                 <i class="bi bi-person-plus"></i> Register
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/violence-detection" routerLinkActive="active">
+                <i class="bi bi-exclamation-triangle"></i> Violence Detection
+              </a>
+            </li>
           </ul>
         </div>
       </div>

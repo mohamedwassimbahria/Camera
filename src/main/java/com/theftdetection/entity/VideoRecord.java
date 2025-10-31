@@ -35,6 +35,9 @@ public class VideoRecord {
     @Column(name = "thumbnail_path")
     private String thumbnailPath;
 
+    @Column(name = "violence_detected")
+    private Boolean violenceDetected;
+
     @ManyToOne
     @JoinColumn(name = "camera_session_id")
     private CameraSession cameraSession;
@@ -79,6 +82,9 @@ public class VideoRecord {
     
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
+
+    public Boolean getViolenceDetected() { return violenceDetected; }
+    public void setViolenceDetected(Boolean violenceDetected) { this.violenceDetected = violenceDetected; }
 
     public CameraSession getCameraSession() { return cameraSession; }
     public void setCameraSession(CameraSession cameraSession) { this.cameraSession = cameraSession; }

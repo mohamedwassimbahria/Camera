@@ -12,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +36,9 @@ public class CameraStreamingService {
     
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private ViolenceDetectionService violenceDetectionService;
     
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -104,6 +108,10 @@ public class CameraStreamingService {
         if (file.getContentType() != null) {
             videoRecord.setMimeType(file.getContentType());
         }
+
+        // Perform violence detection
+        boolean violenceDetected = violenceDetectionService.detectViolence(filePath.toFile());
+        videoRecord.setViolenceDetected(violenceDetected);
         
         videoRecord = videoRepository.save(videoRecord);
         
