@@ -1,0 +1,11 @@
+.video-card {
+  border: 1px solid #ccc;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+video {
+  width: 100%;
+  max-width: 600px;
+}

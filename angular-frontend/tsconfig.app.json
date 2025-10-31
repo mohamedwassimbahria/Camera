@@ -6,7 +6,9 @@
   },
   "files": [
     "src/main.ts",
-    "src/polyfills.ts"
+    "src/polyfills.ts",
+    "src/app/components/violence-detection/violence-detection.component.ts",
+    "srcs/app/components/login/login.component.ts"
   ],
   "include": [
     "src/**/*.d.ts"

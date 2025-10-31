@@ -4,6 +4,7 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { MediaLibraryComponent } from './components/media-library/media-library.component';
 import { RegisterComponent } from './components/register/register.component';
 import { LoginComponent } from './components/login/login.component';
+import { ViolenceDetectionComponent } from './components/violence-detection/violence-detection.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -12,5 +13,6 @@ export const routes: Routes = [
   { path: 'media', component: MediaLibraryComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'violence-detection', component: ViolenceDetectionComponent },
   { path: '**', redirectTo: '/dashboard' }
 ];
